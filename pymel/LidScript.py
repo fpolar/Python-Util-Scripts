@@ -35,8 +35,8 @@ def manageEyeLids(side):
         lBotJob = scriptJob(attributeChange=['Eyes_controller.lBotLid', "manageEyeLids('l')"])
         rBotJob = scriptJob(attributeChange=['Eyes_controller.rBotLid', "manageEyeLids('r')"])
         #bring the full lid mesh out using the rigs anchor
-        anchor_pos = general.PyNode('j_'+side+'_top_eyelid_anchor').getTranslation(space='world')
-        move('j_'+side+'_eyelid_full', anchor_pos, ws=True)
+        anchor_world_transform = general.PyNode('j_'+side+'_top_eyelid_anchor').getMatrix(worldSpace=True)
+        general.PyNode('j_'+side+'_eyelid_full').setMatrix(anchor_world_transform, worldSpace=True)
         scale('j_'+side+'_eyelid_full', eyeScale)
         parent( 'j_'+side+'_eyelid_full', 'j_'+side+'_top_eyelid_anchor' )
     else:
@@ -68,11 +68,13 @@ def manageEyeLids(side):
         if getAttr('Eyes_controller.'+side+capital[i]+'Lid') == 1: #1 is quarter
             #Move the correct lid out onto the anchor and hide the other
             mid_joint_pos = general.PyNode('j_mid').getTranslation(space='world')
-            anchor_pos = general.PyNode('j_'+side+'_'+lowercase[i]+'_eyelid_anchor').getTranslation(space='world')
-            move('j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor', anchor_pos, ws=True)
+            
+            anchor_world_transform = general.PyNode('j_'+side+'_'+lowercase[i]+'_eyelid_anchor').getMatrix(worldSpace=True)
+            general.PyNode('j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor').setMatrix(anchor_world_transform, worldSpace=True)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor', eyeScale)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_quarter', eyeScale)
             parent( 'j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor', 'j_'+side+'_'+lowercase[i]+'_eyelid_anchor' )
+            
             move('j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor', mid_joint_pos, ws=True)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor', [0,0,0])
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_half', [0,0,0])
@@ -84,11 +86,13 @@ def manageEyeLids(side):
         if getAttr('Eyes_controller.'+side+capital[i]+'Lid') == 2: #2 is half
             #Move the correct lid out onto the anchor and hide the other
             mid_joint_pos = general.PyNode('j_mid').getTranslation(space='world')
-            anchor_pos = general.PyNode('j_'+side+'_'+lowercase[i]+'_eyelid_anchor').getTranslation(space='world')
-            move('j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor', anchor_pos, ws=True)
+            
+            anchor_world_transform = general.PyNode('j_'+side+'_'+lowercase[i]+'_eyelid_anchor').getMatrix(worldSpace=True)
+            general.PyNode('j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor').setMatrix(anchor_world_transform, worldSpace=True)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor', eyeScale)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_half', eyeScale)
             parent( 'j_'+side+'_eyelid_'+lowercase[i]+'_h_anchor', 'j_'+side+'_'+lowercase[i]+'_eyelid_anchor' )
+            
             move('j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor', mid_joint_pos, ws=True)
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_q_anchor', [0,0,0])
             scale('j_'+side+'_eyelid_'+lowercase[i]+'_quarter', [0,0,0])
