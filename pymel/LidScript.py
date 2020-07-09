@@ -10,6 +10,9 @@ lFullJob = scriptJob(attributeChange=['Eyes_controller.lFullyClosed', "manageEye
 lTopJob = scriptJob(attributeChange=['Eyes_controller.lTopLid', "manageEyeLids('l')"])
 lBotJob = scriptJob(attributeChange=['Eyes_controller.lBotLid', "manageEyeLids('l')"])
 
+#save transformations before hiding a mesh so they can be reapplied if it's brought back out
+rFullTransform = 0
+
 def manageEyeLids(side):
       
     eyeScale = eyeScaleToLidSpace(side)
@@ -18,8 +21,10 @@ def manageEyeLids(side):
         #bring the full lid mesh out using the rigs anchor
         anchor_world_transform = general.PyNode('j_'+side+'_top_eyelid_anchor').getMatrix(worldSpace=True)
         general.PyNode('j_'+side+'_eyelid_full').setMatrix(anchor_world_transform, worldSpace=True)
-        setAttr('Eyes_controller.'+side+'BotLid', 0)
-        setAttr('Eyes_controller.'+side+'TopLid', 0)
+        if getAttr('Eyes_controller.'+side+'BotLid'):
+            setAttr('Eyes_controller.'+side+'BotLid', 0)        
+        if getAttr('Eyes_controller.'+side+'TopLid'):
+            setAttr('Eyes_controller.'+side+'TopLid', 0)
         scale('j_'+side+'_eyelid_full', eyeScale)
         parent( 'j_'+side+'_eyelid_full', 'j_'+side+'_top_eyelid_anchor' )
     else:
@@ -82,6 +87,7 @@ def eyeScaleToLidSpace(side):
 def shrinkLid(side, vert, size):
     mid_joint_pos  = general.PyNode('j_mid').getTranslation(space='world')
     move('j_'+side+'_eyelid_'+vert+'_'+size[0]+'_anchor', mid_joint_pos, ws=True)
+    move('j_'+side+'_eyelid_'+vert+'_'+size, mid_joint_pos, ws=True)
     scale('j_'+side+'_eyelid_'+vert+'_'+size[0]+'_anchor', [0,0,0])
     scale('j_'+side+'_eyelid_'+vert+'_'+size, [0,0,0])
     parent( 'j_'+side+'_eyelid_'+vert+'_'+size[0]+'_anchor', 'j_mid' )
