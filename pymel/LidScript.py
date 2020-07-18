@@ -15,11 +15,11 @@ lFullJob = scriptJob(attributeChange=[ns+'Eyes_controller.lFullyClosed', "manage
 lTopJob = scriptJob(attributeChange=[ns+'Eyes_controller.lTopLid', "manageEyeLids('l')"])
 lBotJob = scriptJob(attributeChange=[ns+'Eyes_controller.lBotLid', "manageEyeLids('l')"])
 
-#save transformations before hiding a mesh so they can be reapplied if it's brought back out
-rFullTransform = 0
-
 def manageEyeLids(side):
-      
+
+    controllerSelected = False
+    if selected():
+        constrollerSelected = (ns+'Eyes_controller') == selected()[0] 
     eyeScale = eyeScaleToLidSpace(side)
     #Full Lid Management
     if getAttr(ns+'Eyes_controller.'+side+'FullyClosed'):
@@ -82,8 +82,9 @@ def manageEyeLids(side):
             #controllers
             setAttr(ns+side+'_'+lowercase[i]+'_half_lid_controller.visibility', 1)
             setAttr(ns+side+'_'+lowercase[i]+'_quarter_lid_controller.visibility', 0)
-    select(ns+'Eyes_controller')
-
+    
+    if controllerSelected: 
+        select(ns+'Eyes_controller')        
 #Retrieves scale transform done on the 'side' eye joint
 #Returns a transform vector that can apply the same transform on a lid
 #eye: X Y Z
