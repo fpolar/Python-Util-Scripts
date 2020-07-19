@@ -1,30 +1,38 @@
 from pymel.core import *
 
-selectedNodes = selected()
-joints = []
-controls = []
-
-for node in selectedNodes:
-    if str(node.nodeType()) == 'joint':
-        joints.append(node)
-    else:
-        controls.append(node)
-
 sides = ['l', 'r']
 verts = ['_top_', '_bot_']
-children = ['tip', 'mid', 'front', 'outer', 'inner']
-children_heirarchy = ['tip_controller', 'tip_controller|mid_controller', 'tip_controller|mid_controller|front_controller', 'tip_controller|mid_controller|outer_controller', 'tip_controller|mid_controller|inner_controller']
+#lid_names = ['tip', 'mid', 'front', 'outer', 'inner']
+lid_names = ['front', 'outer', 'inner']
+brow_names = ['inner', 'mid', 'outer', 'notch']
+brow_long_names = ['inner', 'mid', 'outer', 'inner_selector|notch']
+
+driverBaseValue = 1.5
+drivenMultiplier = 1.5
+
 for side in sides:
+    side_flip_flag = 1
+    if side == 'r':
+        side_flip_flag = -1
+    for b in range(0,len(brow_names)):
+        curr_joint = PyNode('j_'+side+'_eyebrow_'+brow_names[b])
+        curr_control = PyNode(side+'_eyebrow_controls|'+brow_long_names[b]+'_selector')
+        select(curr_joint)
+        delete(cn=True)
+        cutKey(curr_joint.ty)
+        drivenValueLow = driverBaseValue * drivenMultiplier * -1 * side_flip_flag + curr_joint.ty.get()
+        drivenValueHigh = driverBaseValue * drivenMultiplier * side_flip_flag + curr_joint.ty.get()
+        setDrivenKeyframe(curr_joint.ty, cd=curr_control.ty, driverValue=driverBaseValue*-1, v=drivenValueLow)
+        setDrivenKeyframe(curr_joint.ty, cd=curr_control.ty, driverValue=driverBaseValue, v=drivenValueHigh)
     for vert in verts:
-        for c in range(0,len(children)):
-            curr_joint = PyNode('j_'+side+vert+'eyelid_'+children[c])
-            curr_control = PyNode(side+vert+'lid_controls|'+children_heirarchy[c])
+        for c in range(0,len(lid_names)):
+            curr_joint = PyNode('j_'+side+vert+'eyelid_'+lid_names[c])
+            curr_control = PyNode(side+vert+'eyelid_controls|'+lid_names[c]+'_selector')
+            #geometry constraint slider
             select(curr_joint)
             delete(cn=True)
-            pointConstraint(curr_control, curr_joint, mo=True)
-            orientConstraint(curr_control, curr_joint, mo=True)
-            #if children[c] == 'front' or children[c] == 'inner' or children[c] == 'outer':
-                #geometryConstraint(PyNode(side+'_eye'), curr_joint)
-            if children[c] == 'mid':
-                scaleConstraint(curr_control, curr_joint, mo=True)
-            delete(cn=True)
+            cutKey(curr_joint.ty)
+            drivenValueLow = driverBaseValue * drivenMultiplier * -1 * side_flip_flag + curr_joint.ty.get()
+            drivenValueHigh = driverBaseValue * drivenMultiplier * side_flip_flag + curr_joint.ty.get()
+            setDrivenKeyframe(curr_joint.ty, cd=curr_control.ty, driverValue=-1*driverBaseValue, v=drivenValueLow)
+            setDrivenKeyframe(curr_joint.ty, cd=curr_control.ty, driverValue=driverBaseValue, v=drivenValueHigh)
