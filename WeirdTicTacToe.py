@@ -3,32 +3,44 @@ from PIL import Image
 import numpy as np
 
 class Board:
-	def __init__(self, size):
+	def __init__(self):
 		self.spaces = []
-		for i in range(0,size*size):
-			self.spaces.append(" ")
+		for i in range(0,3*3):
+			self.spaces.append(str(i))
 		self.turnNum = 0
-		self.size = size
 
 	def turn(self, move, row, col):
-		self.spaces[self.size*row+col] = move
+		self.spaces[3*row+col] = move
 		self.turnNum+=1
 
 	def gameover(self):
-		out = (self.turnNum>=self.size*2-1)
-		for i in range(0, self.size):
-			for j in range(0, self.size):
-				if
+		out = (self.turnNum==9) and (self.turnNum>=5) 
+		out = out and (self.spaces[0] == self.spaces[1] == self.spaces[2]) 
+		out = out and (self.spaces[3] == self.spaces[4] == self.spaces[5]) 
+		out = out and (self.spaces[6] == self.spaces[7] == self.spaces[8]) 
+		out = out and (self.spaces[0] == self.spaces[3] == self.spaces[6]) 
+		out = out and (self.spaces[1] == self.spaces[4] == self.spaces[7]) 
+		out = out and (self.spaces[2] == self.spaces[6] == self.spaces[8]) 
+		out = out and (self.spaces[6] == self.spaces[4] == self.spaces[2]) 
+		out = out and (self.spaces[0] == self.spaces[4] == self.spaces[8])
 
 	def print(self, pixel_size):
-		print(self.spaces)
-		colorArray = []#[(ord(char), 0, 0) for char in self.spaces]
-		for i in range(0, self.size):
-			col = []
-			for j in range(0, self.size):
-				col.append([ord(self.spaces[self.size*i+j]), 0, 0])
-			colorArray.append(col*pixel_size)
-		x = np.array(colorArray*pixel_size)
+		# print(self.spaces*10)
+		rgb = [[],[],[]]#[(ord(char), 0, 0) for char in self.spaces]
+		for i in range(0, 3):
+			for ps1 in range(0, pixel_size):
+				for j in range(0, 3):
+					color = []
+					if self.spaces[3*i+j] == 'O':
+						color = [0, 0, 255]
+					elif self.spaces[3*i+j] == 'X':
+						color = [255, 0, 0]
+					else:
+						color = [255, 255, 255]
+					for a in range(0, 3):
+						for ps2 in range(0, pixel_size):
+							rgb[a].append(color[a])
+		x = np.array(rgb)
 		img = Image.fromarray(x, 'RGB')
 		img.show()
 
@@ -40,12 +52,12 @@ class Player:
 
 def playBoard(board, p1, p2):
 	if board.gameover:
-
-	for i in range(0, board.size):
-		for j in range(0, board.size):
+		return
+	for i in range(0, 3):
+		for j in range(0, 3):
 			currBoard = copy.deepcopy(board)
 			if board.turnNum & 1:
-				if currBoard.spaces[board.size*i+j] == ' ':
+				if currBoard.spaces[3*i+j] == ' ':
 					currBoard.turn(p1.char, i, j)
 					playBoard(currBoard, p1, p2)
 				elif not p1.toeUsed:
@@ -53,7 +65,7 @@ def playBoard(board, p1, p2):
 					p1C = copy.deepcopy(p1)
 					playBoard(currBoard, p1C, p2)
 			else:
-				if currBoard.spaces[board.size*i+j] == ' ':
+				if currBoard.spaces[3*i+j] == ' ':
 					currBoard.turn(p2.char, i, j)
 					playBoard(currBoard, p1, p2)
 				elif not p2.toeUsed:
@@ -68,12 +80,7 @@ def playBoard(board, p1, p2):
 player1 = Player('X', False)
 player2 = Player('O', False)
 
-board = Board(3)
+board = Board()
 allBoards = [[board]]
 playBoard(board, player1, player2)
-board.print(300)
-# pixel_size = 30
-# for
-# np_im = np.random.rand()*255
-# new_im = Image.fromarray(np_im)
-# new_im.show()
+board.print(10)
