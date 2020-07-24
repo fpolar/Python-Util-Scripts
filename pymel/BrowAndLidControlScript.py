@@ -6,18 +6,21 @@ cut_key_flag = True
 set_driven_key_flag = True
 
 sides = ['l', 'r']
-verts = ['_top_', '_bot_']
-#lid_names = ['tip', 'mid', 'front', 'outer', 'inner']
-lid_names = ['mid', 'front', 'outer', 'inner']
-#I've been told it's not great to use eval, but eval(name) evalates a string as a variable so eval('curr_joint.'+'tx') could work
-lid_names_to_modifiers = {'mid':{'tx':1.5, 'scale':.2}, 'front':{'ty':1.5}, 'outer':{'ty':1.5}, 'inner':{'ty':1.5}}
-brow_names = ['inner', 'mid', 'outer', 'notch']
-brow_long_names = ['inner', 'mid', 'outer', 'inner_selector|notch']
+verts = ['top', 'bot']
+#if this gets too bloated, read from json file
+control_transform_dict = {'eyebrow':{'inner':{'inner':{'ty':1.5}}, 'mid':{'mid':{'ty':1.5}}, 'outer':{'outer':{'ty':1.5}}, 'notch':{'notch':{'ty':1.5}}}}
+#lid_names = ['mid', 'front', 'outer', 'inner']
+#lid_names_to_modifiers = {'mid':{'tx':1.5, 'sz':.2, 'sx':.2}, 'front':{'ty':1.5}, 'outer':{'ty':1.5}, 'inner':{'ty':1.5}}
+#brow_names = ['inner', 'mid', 'outer', 'notch']
+#brow_long_names = ['inner', 'mid', 'outer', 'inner_selector|notch']
 
 driverBaseValue = 1.5
 drivenMultiplier = 1.5
 
 for side in sides:
+    side_flip_flag = 1
+    if side == 'r':
+        side_flip_flag = -1
     #eyebrow control connections
     for b in range(0,len(brow_names)):
         curr_joint = PyNode('j_'+side+'_eyebrow_'+brow_names[b])
@@ -33,23 +36,26 @@ for side in sides:
     #eyebrow control connections
     for vert in verts:
         for curr_spec in lid_names_to_modifiers:
-            print(curr_spec)
+            if curr_spec ==  'mid' and vert == '_top_':
+                print(curr_spec, side_flip_flag)
+                side_flip_flag *= -1
+            elif side == 'r':
+                side_flip_flag = -1
+            print(curr_spec, side_flip_flag)
             print(lid_names_to_modifiers[curr_spec])
-            #curr_joint = PyNode('j_'+side+vert+'eyelid_'+lid_names[c])
-            #curr_control = PyNode(side+vert+'eyelid_controls|'+lid_names[c]+'_selector')
-            #curr_joint_attr = curr_joint.ty
-            #if lid_names[c] == 'mid':
-            #    curr_joint_attr = curr_joint.tx
-            #    side_flip_flag *= -1
-            #geometry constraint slider
-            #if cut_key_flag:
-            #    cutKey(curr_joint_attr)
-            #if set_driven_key_flag:
-            #    #vertical eyelid movement
-            #    drivenValueLow = driverBaseValue * drivenMultiplier * -1 * side_flip_flag + curr_joint_attr.get()
-            #    drivenValueHigh = driverBaseValue * drivenMultiplier * side_flip_flag + curr_joint_attr.get()
-            #    setDrivenKeyframe(curr_joint_attr, cd=curr_control.ty, driverValue=-1*driverBaseValue, v=drivenValueLow)
-            #    setDrivenKeyframe(curr_joint_attr, cd=curr_control.ty, driverValue=driverBaseValue, v=drivenValueHigh)
+            curr_joint = PyNode('j_'+side+'_'+vert+'_eyelid_'+curr_spec)
+            curr_control = PyNode(side+'_'+vert+'_eyelid_controls|'+curr_spec+'_selector')
+            for curr_attr in lid_names_to_modifiers[curr_spec]:
+                print(side, side_flip_flag)
+                curr_joint_attr = eval('curr_joint.'+curr_attr)
+                curr_multiplier = lid_names_to_modifiers[curr_spec][curr_attr] 
+                if cut_key_flag:
+                    cutKey(curr_joint_attr)
+                if set_driven_key_flag:
+                        drivenValueLow = driverBaseValue * curr_multiplier * -1 * side_flip_flag + curr_joint_attr.get()
+                        drivenValueHigh = driverBaseValue * curr_multiplier * side_flip_flag + curr_joint_attr.get()
+                        setDrivenKeyframe(curr_joint_attr, cd=curr_control.ty, driverValue=-1*driverBaseValue, v=drivenValueLow)
+                        setDrivenKeyframe(curr_joint_attr, cd=curr_control.ty, driverValue=driverBaseValue, v=drivenValueHigh)
             #if lid_names[c] == 'front':
             #    #trying to stick eyelids to eye without geo constraint
             #    zDrivenMultiplier = .2
