@@ -1,0 +1,52 @@
+
+if (`window -exists "FFMpegSewWindow"`) deleteUI "FFMpegSewWindow";
+window -menuBar true  -title "FFMpegSewWindow" -widthHeight 300 200 FFMpegSewWindow;
+menu -label "File" -tearOff true;
+    menuItem -label "Load Settings";
+    menuItem -label "Save Settings";
+
+formLayout -numberOfDivisions 100 ffmpeg_form;
+
+radioButtonGrp
+	-numberOfRadioButtons 2
+	-label "Operating System :"
+	-labelArray2 "PC" "OS"
+	-select 1
+myRadBtnGrp;
+
+rowLayout -numberOfColumns 2 
+    -adjustableColumn true
+    -columnAlign  1 "left"
+    -columnAlign  2 "right"
+    source_row;
+	text -label "Source";
+	string $src_field = `textField source_field`;
+	setParent..;
+
+rowLayout -numberOfColumns 2 
+	-adjustableColumn true
+	-columnAlign  1 "left"
+	-columnAlign  2 "right"
+	output_row;
+	text -label "Output";
+	string $out_field = `textField output_field`;
+	setParent..;
+	
+rowLayout -numberOfColumns 2 
+	-adjustableColumn true
+	-columnAlign  1 "left"
+	-columnAlign  2 "right"
+	submit_row;
+	checkBox -label "Subdirectories";
+	button -label ("Make Big Movie") -command "FFMpegSew" MMPegMovie; 
+	setParent..;
+
+formLayout -edit
+	-attachForm myRadBtnGrp "top" 10
+	-attachForm myRadBtnGrp "left" -20
+	-attachForm source_row "top" 40
+	-attachForm output_row "top" 60
+	-attachForm submit_row "top" 80
+ffmpeg_form;  
+
+showWindow FFMpegSewWindow;   
