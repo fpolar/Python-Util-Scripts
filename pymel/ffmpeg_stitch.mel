@@ -37,7 +37,7 @@ rowLayout -numberOfColumns 2
 	-columnAlign  1 "left"
 	-columnAlign  2 "right"
 	submit_row;
-	checkBox -label "Subdirectories";
+	checkBox -label "Subdirectories";//TODO make subdirectory list expand on check
 	button -label ("Make Big Movie") -command "FFMpegSew" MMPegMovie; 
 	setParent..;
 
@@ -50,3 +50,5 @@ formLayout -edit
 ffmpeg_form;  
 
 showWindow FFMpegSewWindow;   
+
+//TODO rewrite ffmpeg scripts Scott Provided
