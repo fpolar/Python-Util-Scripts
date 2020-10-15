@@ -72,9 +72,11 @@ global proc sak_getFiles (string $dir)
  {
   for ($f in $files)
   {
-  print $f;
-  string $x = `filetest -d $f`;
-  print $x;
+	  string $f_path = $dir +"/" + $f;
+	  string $x = `filetest -d $f2`;
+	  if(x){
+	  
+	  }
   }
  }
 } 
