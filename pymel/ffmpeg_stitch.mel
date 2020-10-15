@@ -68,17 +68,19 @@ global proc FFMpegSewWindow ()
 global proc sak_getFiles (string $dir)
 {
  string $files[] = `getFileList -fld $dir`;
- if (size($files) > 0)
- {
+ string $out_files[];
   for ($f in $files)
   {
 	  string $f_path = $dir +"/" + $f;
-	  string $x = `filetest -d $f2`;
-	  if(x){
-	  
+	  string $x = `filetest -d $f_path`;
+	  if($x){
+		$out_files[size($out_files)] = $f;
 	  }
   }
- }
+  for ($f in $out_files){
+   	print $f;
+  }
+
 } 
 
 FFMpegSewWindow;
