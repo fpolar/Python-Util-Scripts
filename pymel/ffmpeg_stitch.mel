@@ -2,7 +2,8 @@
 global string $s01_images = "C:/";
 global string $s01_movies = "C:/";
 global string $src_field;
-global string $sub_dirs[];
+global string $sub_dir_cb[];
+global string $sub_dir_tf[];
 
 
 global proc setSource (string $src_text_field) 
@@ -131,10 +132,21 @@ global proc set_subdirectories (string $dir)
 				$out_files[size($out_files)] = $f;
 			}
 		}
+
+		global string $sub_dir_cb[];
+		global string $sub_dir_tf[];
+		int $i = 0;
 		for ($f in $out_files){
 			print $f;
-			checkBox -label " ";
-			textField -text $f;
+			string $new_cb_name = ("sub_ch_"+$i);
+			string $new_tf_name = ("sub_tf_"+$i);
+			string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
+			string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
+			$sub_dir_cb[$i] = $new_cb_name;
+			$sub_dir_tf[$i] = $new_tf_name;
+			checkBox -label " " -v true -offCommand $disable_cmd -onCommand $enable_cmd $new_cb_name;
+			textField -text $f $new_tf_name;
+			$i = $i + 1;
 		}
 	}
 } 
