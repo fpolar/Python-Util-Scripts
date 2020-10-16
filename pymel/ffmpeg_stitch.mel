@@ -1,9 +1,34 @@
 
 global string $s01_images = "C:/";
+global string $s01_movies = "C:/";
+global string $src_field;
+global string $sub_dirs[];
 
-global proc returnUI () 
+
+global proc setSource (string $src_text_field) 
 {
+	global string $s01_images;
+	$s01_images = `textField -q -text source_field`;
+}
 
+global proc browseSource (string $src_text_field) 
+{
+	string $filenames[] = `fileDialog2 -rf true -fm 3`;
+	textField -edit -text $filenames[0] source_field;
+	setSource($src_text_field);
+}
+
+global proc setOutput (string $out_text_field) 
+{
+	global string $s01_movies;
+	$s01_movies = `textField -q -text output_field`;
+}
+
+global proc browseOutput (string $out_text_field) 
+{
+	string $filenames[] = `fileDialog2 -rf true -fm 3`;
+	textField -edit -text $filenames[0] output_field;
+	setOutput($out_text_field);
 }
 
 global proc FFMpegSewWindow () 
@@ -21,7 +46,6 @@ global proc FFMpegSewWindow ()
 	$s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images";
 	//assign correct image directory, check if valid, pop up if not
 
-	string $sub_dirs[];
 	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`))) ;
 
 	radioButtonGrp
@@ -31,45 +55,36 @@ global proc FFMpegSewWindow ()
 		-select 1
 	myRadBtnGrp;
 
-	rowLayout -numberOfColumns 2 
+	rowLayout -numberOfColumns 3 
 	    -adjustableColumn true
 	    -columnAlign  1 "left"
 	    -columnAlign  2 "right"
 	    source_row;
 		text -label "Source";
-		string $src_field = `textField source_field`;
+		$src_field = `textField source_field`;
+		button -label ("Browse") -command "browseSource($src_field)" src_browse; 
 		setParent..;
 
-	rowLayout -numberOfColumns 2 
+	rowLayout -numberOfColumns 3 
 		-adjustableColumn true
 		-columnAlign  1 "left"
 		-columnAlign  2 "right"
 		output_row;
 		text -label "Output";
 		string $out_field = `textField output_field`;
+		button -label ("Browse") -command "browseOutput($out_field)" out_browse; 
 		setParent..;
-		
 
 	rowLayout -numberOfColumns 2 
 		-adjustableColumn true
 		-columnAlign  1 "left"
 		-columnAlign  2 "right"
 		submit_row;
-	 	//$sub_box_cmd = sak_getFiles($s01_images);
-		//string $sub_box = `checkBox -label "Subdirectories" -changeCommand $sub_box_cmd`;
-		//checkBox -label "Subdirectories" -changeCommand $sub_box;
-		checkBox -label "Subdirectories" -changeCommand "sak_getFiles($s01_images)";
+		checkBox -label "Subdirectories" -changeCommand "set_subdirectories($s01_images)";
 		button -label ("Make Movie") -command "FFMpegSew" MMPegMovie; 
 		setParent..;
 
     separator -w 280 sep;
-
-	rowColumnLayout -numberOfColumns 2 -columnAlign 1 "right" -columnAttach 2 "both" 0 -columnWidth 2 150 sub_layout;
-        separator;
-		text -label "Default";
-		string $sub_field_1 = `textField sub_field`;
-//        text -label "None";
-//        separator -style "none";
 
 	formLayout -edit
 		-attachForm myRadBtnGrp "top" 10
@@ -83,7 +98,6 @@ global proc FFMpegSewWindow ()
 		-attachForm sep "left" 10
 		-attachForm sep "top" 110
 		-attachForm sep "left" 10
-		-attachForm sub_layout "top" 130
 	ffmpeg_form;  
 
 	showWindow FFMpegSewWindow; 
@@ -91,22 +105,38 @@ global proc FFMpegSewWindow ()
 
 //TODO rewrite ffmpeg scripts Scott Provided
 
-global proc sak_getFiles (string $dir)
+global proc set_subdirectories (string $dir)
 {
- string $files[] = `getFileList -fld $dir`;
- string $out_files[];
-  for ($f in $files)
-  {
-	  string $f_path = $dir +"/" + $f;
-	  string $x = `filetest -d $f_path`;
-	  if($x){
-		$out_files[size($out_files)] = $f;
-	  }
-  }
-  for ($f in $out_files){
-   	print $f;
-  }
+	if (`layout -exists "sub_layout"`){
+		deleteUI "sub_layout";
+	} else{
+		rowColumnLayout -numberOfColumns 2 
+			-adjustableColumn true
+			-columnAlign  1 "left"
+			-columnAlign  2 "right"
+			sub_layout;
 
+		//if (`layout -exists "sub_layout"`){
+		//	formLayout -edit
+		//		-attachForm sub_layout "top" 130
+		//	ffmpeg_form;  
+		//} 
+
+		string $files[] = `getFileList -fld $dir`;
+		string $out_files[];
+		for ($f in $files){
+			string $f_path = $dir +"/" + $f;
+			string $x = `filetest -d $f_path`;
+			if($x){
+				$out_files[size($out_files)] = $f;
+			}
+		}
+		for ($f in $out_files){
+			print $f;
+			checkBox -label " ";
+			textField -text $f;
+		}
+	}
 } 
 
 FFMpegSewWindow;
