@@ -151,4 +151,48 @@ global proc set_subdirectories (string $dir)
 	}
 } 
 
+global proc FFMpegSew() {
+	string $FFMCombiner;
+	global string $s01_images;
+	global string $s01_movies;
+	global string $sub_dir_cb[];
+	global string $sub_dir_tf[];
+	
+	string $ffmpeg = "C:/Users/seasley/Documents/maya/projects/ITP_215/scripts/ffmpeg/bin/ffmpeg.exe";
+
+    if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
+    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
+    }
+    if (`radioButtonGrp -q -select myRadBtnGrp` == 2) {
+    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg");
+    }
+    
+	$s0x_images = (`workspace -q -rd` + "images/");
+	$s0x_movies = (`workspace -q -rd` + "movies/");
+
+	string $ffvariables = "-vcodec libx264 -vf scale=640:-2,format=yuv420p ";
+	string $TEMPcombinevariables = " -c copy -bsf:v h264_mp4toannexb -f mpegts ";
+	string $scripts[] = `getFileList -folder $s0x_images -filespec "s0*"`;
+	for( $item in $scripts )
+	{
+		// turns images into movies
+        system ($ffmpeg + " -y -i " + $s0x_images + $item + "/" + $item + ".%04d.jpeg " + $ffvariables + $s0x_movies + $item + ".mp4");
+        
+
+       // creating temp movie files in preparation for mmpeg to string them together (necessary step for lossless .mp4 combining)
+        system ($ffmpeg + " -y -i " + $s0x_movies + $item + ".mp4 " + $TEMPcombinevariables + $s0x_movies + "temp" + $item + ".ts");
+
+       // This dynamically adds each clip to the big combiner below. 
+         $FFMCombiner = (($FFMCombiner) + $s0x_movies + "temp" + $item + ".ts|");
+	}
+
+	// The Big Combiner - bringing all temp files into one movie 
+	system ($ffmpeg + " -y -i \"concat:" + $FFMCombiner + "\" -c copy -bsf:a aac_adtstoasc " + $s0x_movies + "Final.mp4"); 
+ 
+ 	//This deletes the temporary files created to sew them all together in mp4 format. 
+	for( $item in $scripts ){
+		sysFile -delete ($s0x_movies + "temp" + $item + ".ts");
+	}
+  }
+
 FFMpegSewWindow;
