@@ -1,4 +1,11 @@
 
+global string $s01_images = "C:/";
+
+global proc returnUI () 
+{
+
+}
+
 global proc FFMpegSewWindow () 
 {
 	if (`window -exists "FFMpegSewWindow"`) deleteUI "FFMpegSewWindow";
@@ -10,9 +17,11 @@ global proc FFMpegSewWindow ()
 
 	formLayout -numberOfDivisions 100 ffmpeg_form;
 
-	string $s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images";
+	global string $s01_images;
+	$s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images";
+	//assign correct image directory, check if valid, pop up if not
+
 	string $sub_dirs[];
-	string $column;
 	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`))) ;
 
 	radioButtonGrp
@@ -48,16 +57,33 @@ global proc FFMpegSewWindow ()
 		submit_row;
 	 	//$sub_box_cmd = sak_getFiles($s01_images);
 		//string $sub_box = `checkBox -label "Subdirectories" -changeCommand $sub_box_cmd`;
+		//checkBox -label "Subdirectories" -changeCommand $sub_box;
 		checkBox -label "Subdirectories" -changeCommand "sak_getFiles($s01_images)";
 		button -label ("Make Movie") -command "FFMpegSew" MMPegMovie; 
 		setParent..;
+
+    separator -w 280 sep;
+
+	rowColumnLayout -numberOfColumns 2 -columnAlign 1 "right" -columnAttach 2 "both" 0 -columnWidth 2 150 sub_layout;
+        separator;
+		text -label "Default";
+		string $sub_field_1 = `textField sub_field`;
+//        text -label "None";
+//        separator -style "none";
 
 	formLayout -edit
 		-attachForm myRadBtnGrp "top" 10
 		-attachForm myRadBtnGrp "left" -20
 		-attachForm source_row "top" 40
+		-attachForm source_row "left" 10
 		-attachForm output_row "top" 60
+		-attachForm output_row "left" 10
 		-attachForm submit_row "top" 80
+		-attachForm submit_row "left" 10
+		-attachForm sep "left" 10
+		-attachForm sep "top" 110
+		-attachForm sep "left" 10
+		-attachForm sub_layout "top" 130
 	ffmpeg_form;  
 
 	showWindow FFMpegSewWindow; 
