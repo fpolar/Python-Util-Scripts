@@ -44,10 +44,12 @@ global proc FFMpegSewWindow ()
 	formLayout -numberOfDivisions 100 ffmpeg_form;
 
 	global string $s01_images;
-	$s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images";
+	$s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
+	global string $s01_movies;
+	$s01_movies = "C:/Users/theon/Documents/ffmpeg/";
 	//assign correct image directory, check if valid, pop up if not
 
-	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`))) ;
+	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
 
 	radioButtonGrp
 		-numberOfRadioButtons 2
@@ -88,16 +90,15 @@ global proc FFMpegSewWindow ()
     separator -w 280 sep;
 
 	formLayout -edit
-		-attachForm myRadBtnGrp "top" 10
+		-attachForm myRadBtnGrp "top" 20
 		-attachForm myRadBtnGrp "left" -20
 		-attachForm source_row "top" 40
-		-attachForm source_row "left" 10
-		-attachForm output_row "top" 60
-		-attachForm output_row "left" 10
-		-attachForm submit_row "top" 80
-		-attachForm submit_row "left" 10
-		-attachForm sep "left" 10
-		-attachForm sep "top" 110
+		-attachForm source_row "left" 20
+		-attachForm output_row "top" 70
+		-attachForm output_row "left" 20
+		-attachForm submit_row "top" 100
+		-attachForm submit_row "left" 20
+		-attachForm sep "top" 140
 		-attachForm sep "left" 10
 	ffmpeg_form;  
 
@@ -108,8 +109,8 @@ global proc FFMpegSewWindow ()
 
 global proc set_subdirectories (string $dir)
 {
-	if (`layout -exists "sub_layout"`){
-		deleteUI "sub_layout";
+	if (`layout -exists sub_layout`){
+		deleteUI sub_layout;
 	} else{
 		rowColumnLayout -numberOfColumns 2 
 			-adjustableColumn true
@@ -117,14 +118,13 @@ global proc set_subdirectories (string $dir)
 			-columnAlign  2 "right"
 			sub_layout;
 
-		//if (`layout -exists "sub_layout"`){
-		//	formLayout -edit
-		//		-attachForm sub_layout "top" 130
-		//	ffmpeg_form;  
-		//} 
+		formLayout -edit
+			-attachForm sub_layout "top" 160
+			-attachForm sub_layout "left" 10
+		ffmpeg_form;  
 
 		string $files[] = `getFileList -fld $dir`;
-		string $out_files[];
+		string $out_files[] = {};
 		for ($f in $files){
 			string $f_path = $dir +"/" + $f;
 			string $x = `filetest -d $f_path`;
@@ -137,7 +137,6 @@ global proc set_subdirectories (string $dir)
 		global string $sub_dir_tf[];
 		int $i = 0;
 		for ($f in $out_files){
-			print $f;
 			string $new_cb_name = ("sub_ch_"+$i);
 			string $new_tf_name = ("sub_tf_"+$i);
 			string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
@@ -158,7 +157,8 @@ global proc FFMpegSew() {
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
 	
-	string $ffmpeg = "C:/Users/seasley/Documents/maya/projects/ITP_215/scripts/ffmpeg/bin/ffmpeg.exe";
+	print "\START\n";
+	string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
     if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
     	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
@@ -167,32 +167,47 @@ global proc FFMpegSew() {
     	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg");
     }
     
+	$ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
+
 	$s0x_images = (`workspace -q -rd` + "images/");
 	$s0x_movies = (`workspace -q -rd` + "movies/");
 
 	string $ffvariables = "-vcodec libx264 -vf scale=640:-2,format=yuv420p ";
 	string $TEMPcombinevariables = " -c copy -bsf:v h264_mp4toannexb -f mpegts ";
-	string $scripts[] = `getFileList -folder $s0x_images -filespec "s0*"`;
-	for( $item in $scripts )
+	string $scripts[] = `getFileList -folder $s0x_images -filespec "*.png"`;
+	
+	//system("load C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF1.tif");
+
+	$cmd_out = system("shell C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF%d.tif\" -vcodec libx264 -crf 25 -pix_fmt yuv420p \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4\"");
+
+	//C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF%d.tif" -vcodec libx264 -crf 25 -pix_fmt yuv420p "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4"
+
+	/*for( $item in $scripts )
 	{
+		print $scripts;
+		print $ffmpeg;
 		// turns images into movies
-        system ($ffmpeg + " -y -i " + $s0x_images + $item + "/" + $item + ".%04d.jpeg " + $ffvariables + $s0x_movies + $item + ".mp4");
-        
+        string $out = system ("start C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i FF%d.tif -vcodec libx264 -crf 25 -pix_fmt yuv420p C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4 ");
+        print $out;
+        print "x";
+
+       //C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i FF%d.tif -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4 
 
        // creating temp movie files in preparation for mmpeg to string them together (necessary step for lossless .mp4 combining)
-        system ($ffmpeg + " -y -i " + $s0x_movies + $item + ".mp4 " + $TEMPcombinevariables + $s0x_movies + "temp" + $item + ".ts");
+        //system ($ffmpeg + " -y -i " + $s0x_movies + $item + ".mp4 " + $TEMPcombinevariables + $s0x_movies + "temp" + $item + ".ts");
 
-       // This dynamically adds each clip to the big combiner below. 
-         $FFMCombiner = (($FFMCombiner) + $s0x_movies + "temp" + $item + ".ts|");
-	}
+        // This dynamically adds each clip to the big combiner below. 
+        //$FFMCombiner = (($FFMCombiner) + $s0x_movies + "temp" + $item + ".ts|");
+	}*/
 
+	print "\nEND\n";
 	// The Big Combiner - bringing all temp files into one movie 
-	system ($ffmpeg + " -y -i \"concat:" + $FFMCombiner + "\" -c copy -bsf:a aac_adtstoasc " + $s0x_movies + "Final.mp4"); 
+	//system ($ffmpeg + " -y -i \"concat:" + $FFMCombiner + "\" -c copy -bsf:a aac_adtstoasc " + $s0x_movies + "Final.mp4"); 
  
  	//This deletes the temporary files created to sew them all together in mp4 format. 
-	for( $item in $scripts ){
-		sysFile -delete ($s0x_movies + "temp" + $item + ".ts");
-	}
+	//for( $item in $scripts ){
+	//	sysFile -delete ($s0x_movies + "temp" + $item + ".ts");
+	//}
   }
 
 FFMpegSewWindow;
