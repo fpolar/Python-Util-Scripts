@@ -1,35 +1,43 @@
-
-global string $s01_images = "C:/";
-global string $s01_movies = "C:/";
-global string $src_field;
+global string $sub_flag;
+global string $src_img_dir = "";
+global string $out_mov_dir = "";
+//global string $src_img_dir = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
+//global string $out_mov_dir = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
+global string $img_names;
 global string $sub_dir_cb[];
 global string $sub_dir_tf[];
 
 
-global proc setSource (string $src_text_field) 
+global proc setImageName (string $src_text_field) 
 {
-	global string $s01_images;
-	$s01_images = `textField -q -text source_field`;
+	global string $src_img_dir;
+	$src_img_dir = `textField -q -text source_field`;
 }
 
-global proc browseSource (string $src_text_field) 
+global proc setSource () 
+{
+	global string $src_img_dir;
+	$src_img_dir = `textField -q -text source_field`;
+}
+
+global proc browseSource () 
 {
 	string $filenames[] = `fileDialog2 -rf true -fm 3`;
 	textField -edit -text $filenames[0] source_field;
-	setSource($src_text_field);
+	setSource();
 }
 
-global proc setOutput (string $out_text_field) 
+global proc setOutput () 
 {
-	global string $s01_movies;
-	$s01_movies = `textField -q -text output_field`;
+	global string $out_mov_dir;
+	$out_mov_dir = `textField -q -text output_field`;
 }
 
-global proc browseOutput (string $out_text_field) 
+global proc browseOutput () 
 {
 	string $filenames[] = `fileDialog2 -rf true -fm 3`;
 	textField -edit -text $filenames[0] output_field;
-	setOutput($out_text_field);
+	setOutput();
 }
 
 global proc FFMpegSewWindow () 
@@ -40,50 +48,51 @@ global proc FFMpegSewWindow ()
 	    menuItem -label "Load Settings";
 	    menuItem -label "Save Settings";
 
-
 	formLayout -numberOfDivisions 100 ffmpeg_form;
 
-	global string $s01_images;
-	$s01_images = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
-	global string $s01_movies;
-	$s01_movies = "C:/Users/theon/Documents/ffmpeg/";
-	//assign correct image directory, check if valid, pop up if not
-
-	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
+	//text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
 
 	radioButtonGrp
 		-numberOfRadioButtons 2
-		-label "Operating System :"
-		-labelArray2 "PC" "OS"
+		-label "OS:        "
+		-labelArray2 "PC" "MAC"
 		-select 1
+		-columnWidth 1 50
+		-columnWidth 2 100
+		-columnWidth 2 100
 	myRadBtnGrp;
 
 	rowLayout -numberOfColumns 3 
 	    -adjustableColumn true
 	    -columnAlign  1 "left"
 	    -columnAlign  2 "right"
+		-columnWidth 1 50
+		-columnWidth 2 110
 	    source_row;
 		text -label "Source";
-		$src_field = `textField source_field`;
-		button -label ("Browse") -command "browseSource($src_field)" src_browse; 
+		textField -changeCommand setSource source_field;
+		button -label ("Browse") -command browseSource src_browse; 
 		setParent..;
 
 	rowLayout -numberOfColumns 3 
 		-adjustableColumn true
 		-columnAlign  1 "left"
 		-columnAlign  2 "right"
+		-columnWidth 1 50
+		-columnWidth 2 110
 		output_row;
 		text -label "Output";
-		string $out_field = `textField output_field`;
-		button -label ("Browse") -command "browseOutput($out_field)" out_browse; 
+		textField -changeCommand setOutput output_field;
+		button -label ("Browse") -command browseOutput out_browse; 
 		setParent..;
 
 	rowLayout -numberOfColumns 2 
 		-adjustableColumn true
 		-columnAlign  1 "left"
 		-columnAlign  2 "right"
+		-columnWidth 1 150
 		submit_row;
-		checkBox -label "Subdirectories" -changeCommand "set_subdirectories($s01_images)";
+		checkBox -label "Subdirectories" -changeCommand "set_subdirectories($src_img_dir)";
 		button -label ("Make Movie") -command "FFMpegSew" MMPegMovie; 
 		setParent..;
 
@@ -91,36 +100,37 @@ global proc FFMpegSewWindow ()
 
 	formLayout -edit
 		-attachForm myRadBtnGrp "top" 20
-		-attachForm myRadBtnGrp "left" -20
-		-attachForm source_row "top" 40
-		-attachForm source_row "left" 20
-		-attachForm output_row "top" 70
-		-attachForm output_row "left" 20
-		-attachForm submit_row "top" 100
-		-attachForm submit_row "left" 20
-		-attachForm sep "top" 140
+		-attachForm myRadBtnGrp "left" 30
+		-attachForm source_row "top" 45
+		-attachForm source_row "left" 30
+		-attachForm output_row "top" 77
+		-attachForm output_row "left" 30
+		-attachForm submit_row "top" 110
+		-attachForm submit_row "left" 30
+		-attachForm sep "top" 150
 		-attachForm sep "left" 10
 	ffmpeg_form;  
 
 	showWindow FFMpegSewWindow; 
 }  
 
-//TODO rewrite ffmpeg scripts Scott Provided
-
 global proc set_subdirectories (string $dir)
 {
-	if (`layout -exists sub_layout`){
+	global string $sub_flag;
+	if ($sub_flag == 1){
 		deleteUI sub_layout;
+		$sub_flag = 0;
 	} else{
 		rowColumnLayout -numberOfColumns 2 
 			-adjustableColumn true
+			-columnWidth 2 200
 			-columnAlign  1 "left"
 			-columnAlign  2 "right"
 			sub_layout;
 
 		formLayout -edit
 			-attachForm sub_layout "top" 160
-			-attachForm sub_layout "left" 10
+			-attachForm sub_layout "left" 30
 		ffmpeg_form;  
 
 		string $files[] = `getFileList -fld $dir`;
@@ -147,15 +157,17 @@ global proc set_subdirectories (string $dir)
 			textField -text $f $new_tf_name;
 			$i = $i + 1;
 		}
+		$sub_flag = 1;
 	}
 } 
 
 global proc FFMpegSew() {
 	string $FFMCombiner;
-	global string $s01_images;
-	global string $s01_movies;
-	global string $sub_dir_cb[];
-	global string $sub_dir_tf[];
+	global string $src_img_dir;
+	global string $out_mov_dir;
+	if($src_img_dir == "" || $out_mov_dir == ""){
+		error "please select a source and output directory";
+	}
 	
 	print "\START\n";
 	string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
@@ -169,18 +181,21 @@ global proc FFMpegSew() {
     
 	$ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
-	$s0x_images = (`workspace -q -rd` + "images/");
-	$s0x_movies = (`workspace -q -rd` + "movies/");
+	string $ffmpeg_variables = " -r 12 -f image2 -vcodec libx264 -s 1280x720 -pix_fmt yuv420p -crf 25 -i ";
 
-	string $ffvariables = "-vcodec libx264 -vf scale=640:-2,format=yuv420p ";
-	string $TEMPcombinevariables = " -c copy -bsf:v h264_mp4toannexb -f mpegts ";
-	string $scripts[] = `getFileList -folder $s0x_images -filespec "*.png"`;
-	
-	//system("load C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF1.tif");
+	global string $sub_flag;
+	global string $img_names;
+	if($sub_flag == 0){
+
+	}
+	global string $sub_dir_cb[];
+	global string $sub_dir_tf[];
+
+	$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_variables + 
 
 	$cmd_out = system("shell C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF%d.tif\" -vcodec libx264 -crf 25 -pix_fmt yuv420p \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4\"");
 
-	//C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF%d.tif" -vcodec libx264 -crf 25 -pix_fmt yuv420p "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4"
+	print $cmd_out;
 
 	/*for( $item in $scripts )
 	{
