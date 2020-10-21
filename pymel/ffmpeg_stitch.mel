@@ -48,6 +48,11 @@ global proc FFMpegSewWindow ()
 	    menuItem -label "Load Settings";
 	    menuItem -label "Save Settings";
 
+	global string $sub_dir_cb[];
+	global string $sub_dir_tf[];
+	$sub_dir_cb = {};
+	$sub_dir_tf = {};
+
 	formLayout -numberOfDivisions 100 ffmpeg_form;
 
 	//text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
@@ -92,11 +97,18 @@ global proc FFMpegSewWindow ()
 		-columnAlign  2 "right"
 		-columnWidth 1 150
 		submit_row;
-		checkBox -label "Subdirectories" -changeCommand "set_subdirectories($src_img_dir)";
+		checkBox -label "Subdirectories" -onCommand "set_subdirectories($src_img_dir)" -offCommand hide_subdirectories;
 		button -label ("Make Movie") -command "FFMpegSew" MMPegMovie; 
 		setParent..;
 
     separator -w 280 sep;
+
+		rowColumnLayout -numberOfColumns 2 
+			-adjustableColumn true
+			-columnWidth 2 200
+			-columnAlign  1 "left"
+			-columnAlign  2 "right"
+			sub_layout;
 
 	formLayout -edit
 		-attachForm myRadBtnGrp "top" 20
@@ -109,57 +121,78 @@ global proc FFMpegSewWindow ()
 		-attachForm submit_row "left" 30
 		-attachForm sep "top" 150
 		-attachForm sep "left" 10
+		-attachForm sub_layout "top" 160
+		-attachForm sub_layout "left" -330
 	ffmpeg_form;  
 
 	showWindow FFMpegSewWindow; 
 }  
 
+global proc hide_subdirectories(){
+
+	formLayout -edit
+		-attachForm sub_layout "top" 160
+		-attachForm sub_layout "left" -330
+	ffmpeg_form;  
+	clear_subs();
+}
+
 global proc set_subdirectories (string $dir)
 {
-	global string $sub_flag;
-	if ($sub_flag == 1){
-		deleteUI sub_layout;
+	global string $src_img_dir;
+	if($src_img_dir == "xxx"){
 		$sub_flag = 0;
-	} else{
-		rowColumnLayout -numberOfColumns 2 
-			-adjustableColumn true
-			-columnWidth 2 200
-			-columnAlign  1 "left"
-			-columnAlign  2 "right"
-			sub_layout;
-
-		formLayout -edit
-			-attachForm sub_layout "top" 160
-			-attachForm sub_layout "left" 30
-		ffmpeg_form;  
-
-		string $files[] = `getFileList -fld $dir`;
-		string $out_files[] = {};
-		for ($f in $files){
-			string $f_path = $dir +"/" + $f;
-			string $x = `filetest -d $f_path`;
-			if($x){
-				$out_files[size($out_files)] = $f;
-			}
-		}
-
-		global string $sub_dir_cb[];
-		global string $sub_dir_tf[];
-		int $i = 0;
-		for ($f in $out_files){
-			string $new_cb_name = ("sub_ch_"+$i);
-			string $new_tf_name = ("sub_tf_"+$i);
-			string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
-			string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
-			$sub_dir_cb[$i] = $new_cb_name;
-			$sub_dir_tf[$i] = $new_tf_name;
-			checkBox -label " " -v true -offCommand $disable_cmd -onCommand $enable_cmd $new_cb_name;
-			textField -text $f $new_tf_name;
-			$i = $i + 1;
-		}
-		$sub_flag = 1;
+		error "please select a source directory";
 	}
+
+	formLayout -edit
+		-attachForm sub_layout "top" 160
+		-attachForm sub_layout "left" 30
+	ffmpeg_form;  
+
+	string $files[] = `getFileList -fld $dir`;
+	string $out_files[] = {};
+	for ($f in $files){
+		string $f_path = $dir +"/" + $f;
+		string $x = `filetest -d $f_path`;
+		if($x){
+			$out_files[size($out_files)] = $f;
+		}
+	}
+
+	global string $sub_dir_cb[];
+	global string $sub_dir_tf[];
+	clear_subs();
+	int $i = 0;
+	for ($f in $out_files){
+		string $new_cb_name = ("sub_ch_"+$i);
+		string $new_tf_name = ("sub_tf_"+$i);
+		string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
+		string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
+		$sub_dir_cb[$i] = $new_cb_name;
+		$sub_dir_tf[$i] = $new_tf_name;
+		checkBox -label " " -v true -offCommand $disable_cmd -onCommand $enable_cmd $new_cb_name;
+		textField -text $f $new_tf_name;
+		$i = $i + 1;
+	}
+	$sub_flag = 1;
 } 
+
+global proc clear_subs(){
+	global string $sub_dir_cb[];
+	global string $sub_dir_tf[];
+	print `size($sub_dir_cb)`;
+	if(size($sub_dir_cb) > 0){
+		for ($cb in $sub_dir_cb){
+			deleteUI $cb;
+		}
+		for ($tf in $sub_dir_tf){
+			deleteUI $tf;
+		}
+	}
+	$sub_dir_cb = {};
+	$sub_dir_tf = {};
+}
 
 global proc FFMpegSew() {
 	string $FFMCombiner;
