@@ -1,4 +1,3 @@
-global string $sub_flag;
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
 //global string $src_img_dir = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
@@ -43,7 +42,7 @@ global proc browseOutput ()
 global proc FFMpegSewWindow () 
 {
 	if (`window -exists "FFMpegSewWindow"`) deleteUI "FFMpegSewWindow";
-	window -menuBar true  -title "FFMpegSewWindow" -widthHeight 300 200 FFMpegSewWindow;
+	window -menuBar true  -title "FFMpegSewWindow" -widthHeight 300 750 FFMpegSewWindow;
 	menu -label "File" -tearOff true;
 	    menuItem -label "Load Settings";
 	    menuItem -label "Save Settings";
@@ -97,7 +96,7 @@ global proc FFMpegSewWindow ()
 		-columnAlign  2 "right"
 		-columnWidth 1 150
 		submit_row;
-		checkBox -label "Subdirectories" -onCommand "set_subdirectories($src_img_dir)" -offCommand hide_subdirectories;
+		checkBox -label "Subdirectories" -onCommand "set_subdirectories($src_img_dir)" -offCommand hide_subdirectories sub_checkbox;
 		button -label ("Make Movie") -command "FFMpegSew" MMPegMovie; 
 		setParent..;
 
@@ -140,16 +139,13 @@ global proc hide_subdirectories(){
 global proc set_subdirectories (string $dir)
 {
 	global string $src_img_dir;
-	if($src_img_dir == "xxx"){
-		$sub_flag = 0;
+	if($src_img_dir == ""){
+		checkBox -e -v 0 sub_checkbox;
 		error "please select a source directory";
 	}
 
-	formLayout -edit
-		-attachForm sub_layout "top" 160
-		-attachForm sub_layout "left" 30
-	ffmpeg_form;  
-
+	//getting subdirectories
+	//TODO filetest seems to think some files are directories
 	string $files[] = `getFileList -fld $dir`;
 	string $out_files[] = {};
 	for ($f in $files){
@@ -160,6 +156,7 @@ global proc set_subdirectories (string $dir)
 		}
 	}
 
+	//creating and saving checkboxes, storing related subdirectories
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
 	clear_subs();
@@ -175,13 +172,15 @@ global proc set_subdirectories (string $dir)
 		textField -text $f $new_tf_name;
 		$i = $i + 1;
 	}
-	$sub_flag = 1;
+	formLayout -edit
+		-attachForm sub_layout "top" 160
+		-attachForm sub_layout "left" 30
+	ffmpeg_form;  
 } 
 
 global proc clear_subs(){
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
-	print `size($sub_dir_cb)`;
 	if(size($sub_dir_cb) > 0){
 		for ($cb in $sub_dir_cb){
 			deleteUI $cb;
@@ -202,7 +201,6 @@ global proc FFMpegSew() {
 		error "please select a source and output directory";
 	}
 	
-	print "\START\n";
 	string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
     if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
@@ -214,21 +212,35 @@ global proc FFMpegSew() {
     
 	$ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
-	string $ffmpeg_variables = " -r 12 -f image2 -vcodec libx264 -s 1280x720 -pix_fmt yuv420p -crf 25 -i ";
+	string $ffmpeg_input_vars = " -r 12 -f image2 -s 1280x720 -i ";
+	string $ffmpeg_output_vars = "-vcodec libx264 -pix_fmt yuv420p -crf 25";
 
-	global string $sub_flag;
 	global string $img_names;
-	if($sub_flag == 0){
+	$img_names = "FF%d.tif";
+	if(`checkBox -q -v sub_checkbox`){
+		print "subs enabled";
+		global string $sub_dir_cb[];
+		global string $sub_dir_tf[];
 
+		int $subidx = 0;
+		for ($cb in $sub_dir_cb){
+			if(`checkBox -q -v $cb`){
+				string $curr_subdir = `textField -q -tx $sub_dir_tf[$subidx]`;
+
+				$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $curr_subdir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $src_img_dir + "/" + $curr_subdir + "/out.mp4\"";
+
+				print $ffmpeg_cmd;
+
+				$cmd_out = system($ffmpeg_cmd);
+				if($cmd_out != "") print $cmd_out;
+			}
+			$subidx = $subidx + 1;
+		}
+	}else{
+		$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
+		$cmd_out = system($ffmpeg_cmd);
+		if($cmd_out != "") print $cmd_out;
 	}
-	global string $sub_dir_cb[];
-	global string $sub_dir_tf[];
-
-	$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_variables + 
-
-	$cmd_out = system("shell C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/FF%d.tif\" -vcodec libx264 -crf 25 -pix_fmt yuv420p \"C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4\"");
-
-	print $cmd_out;
 
 	/*for( $item in $scripts )
 	{
@@ -248,7 +260,6 @@ global proc FFMpegSew() {
         //$FFMCombiner = (($FFMCombiner) + $s0x_movies + "temp" + $item + ".ts|");
 	}*/
 
-	print "\nEND\n";
 	// The Big Combiner - bringing all temp files into one movie 
 	//system ($ffmpeg + " -y -i \"concat:" + $FFMCombiner + "\" -c copy -bsf:a aac_adtstoasc " + $s0x_movies + "Final.mp4"); 
  
