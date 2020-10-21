@@ -221,6 +221,7 @@ global proc FFMpegSew() {
 		print "subs enabled";
 		global string $sub_dir_cb[];
 		global string $sub_dir_tf[];
+		string $ts_list = "";
 
 		int $subidx = 0;
 		for ($cb in $sub_dir_cb){
@@ -229,13 +230,24 @@ global proc FFMpegSew() {
 
 				$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $curr_subdir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $src_img_dir + "/" + $curr_subdir + "/out.mp4\"";
 
-				print $ffmpeg_cmd;
-
 				$cmd_out = system($ffmpeg_cmd);
 				if($cmd_out != "") print $cmd_out;
+
+				string $ts_path = $src_img_dir + "/" + $curr_subdir + "/temp" + $subidx + ".ts";
+
+				$ffmpeg_temp_cmd = "shell "+$ffmpeg+" -i \""+$src_img_dir + "/" + $curr_subdir+"/out.mp4\" -c copy -bsf:v h264_mp4toannexb -f mpegts \"" + $ts_path + "\"";
+
+				system($ffmpeg_temp_cmd);
+
+				$ts_list = $ts_list + $ts_path +"|";
+
 			}
 			$subidx = $subidx + 1;
 		}
+
+		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc \"" + $out_mov_dir + "/Final.mp4\"";
+		print $ffmpeg_combine_cmd;
+		system($ffmpeg_combine_cmd);
 	}else{
 		$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
 		$cmd_out = system($ffmpeg_cmd);
