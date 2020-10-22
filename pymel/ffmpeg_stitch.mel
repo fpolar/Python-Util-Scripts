@@ -233,7 +233,7 @@ global proc FFMpegSew() {
 				$cmd_out = system($ffmpeg_cmd);
 				if($cmd_out != "") print $cmd_out;
 
-				string $ts_path = $src_img_dir + "/" + $curr_subdir + "/temp" + $subidx + ".ts";
+				string $ts_path = $src_img_dir + "/" + $curr_subdir + "/temp.ts";
 
 				$ffmpeg_temp_cmd = "shell "+$ffmpeg+" -i \""+$src_img_dir + "/" + $curr_subdir+"/out.mp4\" -c copy -bsf:v h264_mp4toannexb -f mpegts \"" + $ts_path + "\"";
 
@@ -248,32 +248,26 @@ global proc FFMpegSew() {
 		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc \"" + $out_mov_dir + "/Final.mp4\"";
 		print $ffmpeg_combine_cmd;
 		system($ffmpeg_combine_cmd);
+
+		//may not have permissions to delete
+		/*
+		$subidx = 0;
+		for ($cb in $sub_dir_cb){
+			if(`checkBox -q -v $cb`){
+				string $curr_subdir = `textField -q -tx $sub_dir_tf[$subidx]`;
+				string $ts_path = "\""+$src_img_dir + "/" + $curr_subdir + "/temp.ts"+"\"";
+				$ts_path = substituteAllString($ts_path, "/",  "\\");
+				sysFile -delete ($ts_path);
+				//system("shell del" + $ts_path);
+			}
+			$subidx = $subidx + 1;
+		}
+		*/
 	}else{
 		$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
 		$cmd_out = system($ffmpeg_cmd);
 		if($cmd_out != "") print $cmd_out;
 	}
-
-	/*for( $item in $scripts )
-	{
-		print $scripts;
-		print $ffmpeg;
-		// turns images into movies
-        string $out = system ("start C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i FF%d.tif -vcodec libx264 -crf 25 -pix_fmt yuv420p C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF/test.mp4 ");
-        print $out;
-        print "x";
-
-       //C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe -r 12 -f image2 -s 1920x1080 -i FF%d.tif -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4 
-
-       // creating temp movie files in preparation for mmpeg to string them together (necessary step for lossless .mp4 combining)
-        //system ($ffmpeg + " -y -i " + $s0x_movies + $item + ".mp4 " + $TEMPcombinevariables + $s0x_movies + "temp" + $item + ".ts");
-
-        // This dynamically adds each clip to the big combiner below. 
-        //$FFMCombiner = (($FFMCombiner) + $s0x_movies + "temp" + $item + ".ts|");
-	}*/
-
-	// The Big Combiner - bringing all temp files into one movie 
-	//system ($ffmpeg + " -y -i \"concat:" + $FFMCombiner + "\" -c copy -bsf:a aac_adtstoasc " + $s0x_movies + "Final.mp4"); 
  
  	//This deletes the temporary files created to sew them all together in mp4 format. 
 	//for( $item in $scripts ){
