@@ -1,7 +1,9 @@
+//Version 1.0.0
+//Added FFmpeg.exe location browsing
+
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
-//global string $src_img_dir = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
-//global string $out_mov_dir = "C:/Users/theon/Documents/Art/romance dawn/3D/images/clearFF";
+global string $ffmpeg_dir = "";
 global string $img_names;
 global string $sub_dir_cb[];
 global string $sub_dir_tf[];
@@ -13,6 +15,18 @@ global proc setImageName (string $src_text_field)
 	$src_img_dir = `textField -q -text source_field`;
 }
 
+global proc setFFmpeg () 
+{
+	global string $ffmpeg_dir;
+	$ffmpeg_dir = `textField -q -text ffmpeg_field`;
+}
+
+global proc browseFFmpeg () 
+{
+	string $filenames[] = `fileDialog2 -rf true -fm 1`;
+	textField -edit -text $filenames[0] ffmpeg_field;
+	setFFmpeg();
+}
 global proc setSource () 
 {
 	global string $src_img_dir;
@@ -42,10 +56,10 @@ global proc browseOutput ()
 global proc FFMpegSewWindow () 
 {
 	if (`window -exists "FFMpegSewWindow"`) deleteUI "FFMpegSewWindow";
-	window -menuBar true  -title "FFMpegSewWindow" -widthHeight 300 750 FFMpegSewWindow;
-	menu -label "File" -tearOff true;
-	    menuItem -label "Load Settings";
-	    menuItem -label "Save Settings";
+	window -menuBar true -title "FFMpegSewWindow" -widthHeight 300 750 FFMpegSewWindow;
+	menu -label "Settings" -tearOff false;
+	    menuItem -label "Load Settings" -c ReadSettings;
+	    menuItem -label "Save Settings" -c WriteSettings;
 
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
@@ -65,6 +79,18 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 100
 		-columnWidth 2 100
 	myRadBtnGrp;
+
+	rowLayout -numberOfColumns 3 
+	    -adjustableColumn true
+	    -columnAlign  1 "left"
+	    -columnAlign  2 "right"
+		-columnWidth 1 60
+		-columnWidth 2 110
+	    ffmpeg_row;
+		text -label "ffmpeg loc";
+		textField -changeCommand setFFmpeg ffmpeg_field;
+		button -label ("Browse") -command browseFFmpeg ffmpeg_browse; 
+		setParent..;
 
 	rowLayout -numberOfColumns 3 
 	    -adjustableColumn true
@@ -110,17 +136,19 @@ global proc FFMpegSewWindow ()
 			sub_layout;
 
 	formLayout -edit
-		-attachForm myRadBtnGrp "top" 20
+		-attachForm myRadBtnGrp "top" 15
 		-attachForm myRadBtnGrp "left" 30
-		-attachForm source_row "top" 45
+		-attachForm ffmpeg_row "top" 45
+		-attachForm ffmpeg_row "left" 20
+		-attachForm source_row "top" 80
 		-attachForm source_row "left" 30
-		-attachForm output_row "top" 77
+		-attachForm output_row "top" 117
 		-attachForm output_row "left" 30
-		-attachForm submit_row "top" 110
+		-attachForm submit_row "top" 150
 		-attachForm submit_row "left" 30
-		-attachForm sep "top" 150
+		-attachForm sep "top" 190
 		-attachForm sep "left" 10
-		-attachForm sub_layout "top" 160
+		-attachForm sub_layout "top" 220
 		-attachForm sub_layout "left" -330
 	ffmpeg_form;  
 
@@ -130,7 +158,6 @@ global proc FFMpegSewWindow ()
 global proc hide_subdirectories(){
 
 	formLayout -edit
-		-attachForm sub_layout "top" 160
 		-attachForm sub_layout "left" -330
 	ffmpeg_form;  
 	clear_subs();
@@ -173,7 +200,6 @@ global proc set_subdirectories (string $dir)
 		$i = $i + 1;
 	}
 	formLayout -edit
-		-attachForm sub_layout "top" 160
 		-attachForm sub_layout "left" 30
 	ffmpeg_form;  
 } 
@@ -201,7 +227,9 @@ global proc FFMpegSew() {
 		error "please select a source and output directory";
 	}
 	
-	string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
+	global string $ffmpeg_dir;
+	string $ffmpeg = $ffmpeg_dir;
+	// string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
     if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
     	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
@@ -274,5 +302,44 @@ global proc FFMpegSew() {
 	//	sysFile -delete ($s0x_movies + "temp" + $item + ".ts");
 	//}
   }
+
+// The below two global proc read in and write out settings to one file
+global proc WriteSettings()
+{
+	// Create A String Array With Test Data
+	string $myStrArray[] =
+	    {
+	    "textField -e -text \"" + `textField -q -text text_SetFBXFolder` + "\" text_SetFBXFolder;",
+	    "textField -e -text \"" + `textField -q -text text_SetASFolder` + "\" text_SetASFolder;",
+	    "textField -e -text \"" + `textField -q -text text_ReadInMocapFBX` + "\" text_ReadInMocapFBX;",
+	    "textField -e -text \"" + `textField -q -text text_SaveReabakedMocap` + "\" text_SaveReabakedMocap;",
+	    "textField -e -text \"" + `textField -q -text textField_ReadinASRig` + "\" textField_ReadinASRig;"
+	    };
+
+    string $filePath = (`internalVar -usd` + "ffmpeg_stitch_Settings.txt") ;
+
+$fileId = `fopen $filePath "w"` ;
+
+// Print Array To File
+for($line in $myStrArray)
+fprint $fileId ($line+"\n") ;
+
+// Close File
+fclose $fileId ;
+}
+
+global proc ReadSettings()
+{
+	$filename = (`internalVar -usd` + "ffmpeg_stitch_Settings.txt");
+	$fileId=`fopen $filename "r"`;
+	string $nextLine = `fgetline $fileId`;
+	while ( size( $nextLine ) > 0 ) {
+	    print ( $nextLine );
+	    eval ($nextLine);
+	    $nextLine = `fgetline $fileId`;
+	}
+	fclose $fileId;
+
+}
 
 FFMpegSewWindow;
