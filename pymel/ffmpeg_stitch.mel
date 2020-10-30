@@ -1,5 +1,5 @@
-//Version 1.0.0
-//Added FFmpeg.exe location browsing
+//Version 1.1.0
+//Added FFmpeg.exe location verification error and basic setting writing implemented
 
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
@@ -223,8 +223,12 @@ global proc FFMpegSew() {
 	string $FFMCombiner;
 	global string $src_img_dir;
 	global string $out_mov_dir;
+	global string $ffmpeg_dir;
 	if($src_img_dir == "" || $out_mov_dir == ""){
 		error "please select a source and output directory";
+	}
+	if($ffmpeg_dir == ""){
+		error "please specify the location of ffmpeg.exe";
 	}
 	
 	global string $ffmpeg_dir;
@@ -306,14 +310,15 @@ global proc FFMpegSew() {
 // The below two global proc read in and write out settings to one file
 global proc WriteSettings()
 {
+	global string $src_img_dir;
+	global string $out_mov_dir;
+	global string $ffmpeg_dir;
 	// Create A String Array With Test Data
 	string $myStrArray[] =
 	    {
-	    "textField -e -text \"" + `textField -q -text text_SetFBXFolder` + "\" text_SetFBXFolder;",
-	    "textField -e -text \"" + `textField -q -text text_SetASFolder` + "\" text_SetASFolder;",
-	    "textField -e -text \"" + `textField -q -text text_ReadInMocapFBX` + "\" text_ReadInMocapFBX;",
-	    "textField -e -text \"" + `textField -q -text text_SaveReabakedMocap` + "\" text_SaveReabakedMocap;",
-	    "textField -e -text \"" + `textField -q -text textField_ReadinASRig` + "\" textField_ReadinASRig;"
+	    "textField -e -text \"" + $ffmpeg_dir + "\" ffmpeg_field;",
+	    "textField -e -text \"" + $src_img_dir + "\" source_field;",
+	    "textField -e -text \"" + $out_mov_dir + "\" output_field;"
 	    };
 
     string $filePath = (`internalVar -usd` + "ffmpeg_stitch_Settings.txt") ;
