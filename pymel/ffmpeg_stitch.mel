@@ -349,6 +349,7 @@ global proc WriteSettings()
 	global string $out_mov_dir;
 	global string $ffmpeg_dir;
 	global string $img_names;
+	string $sub_checked = `checkBox -q -v sub_checkbox`;
 	// Create A String Array With Test Data
 	string $myStrArray[] =
 	    {
@@ -356,6 +357,7 @@ global proc WriteSettings()
 	    "textField -e -text \"" + $img_names + "\" file_format_field;",
 	    "textField -e -text \"" + $src_img_dir + "\" source_field;",
 	    "textField -e -text \"" + $out_mov_dir + "\" output_field;"
+	    // "checkBox -e -v \"" + $sub_checked + "\" sub_checkbox;"
 	    };
 
 	// appendStringArray($myStrArray[], $sub_dir_cb[], size($sub_dir_cb)) 
@@ -386,7 +388,7 @@ global proc ReadSettings()
 	$fileId=`fopen $filename "r"`;
 	string $nextLine = `fgetline $fileId`;
 	while ( size( $nextLine ) > 0 ) {
-	    print ( $nextLine );
+	    // print ( $nextLine );
 	    eval ($nextLine);
 	    $nextLine = `fgetline $fileId`;
 	}
