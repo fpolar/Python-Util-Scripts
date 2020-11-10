@@ -4,10 +4,15 @@
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
 global string $ffmpeg_dir = "";
-global string $img_names;
+global string $img_names = "f%d.tif";
 global string $sub_dir_cb[];
 global string $sub_dir_tf[];
 
+global proc setFileFormat () 
+{
+	global string $img_names;
+	$img_names = `textField -q -text file_format_field`;
+}
 
 global proc setImageName (string $src_text_field) 
 {
@@ -61,6 +66,13 @@ global proc FFMpegSewWindow ()
 	    menuItem -label "Load Settings" -c ReadSettings;
 	    menuItem -label "Save Settings" -c WriteSettings;
 
+	global string $src_img_dir;
+	global string $out_mov_dir;
+	global string $ffmpeg_dir;
+	global string $img_names;
+	$src_img_dir = ("" + `workspace -expandName "images"`);
+	$out_mov_dir = ("" + `workspace -expandName "output"`);
+	$ffmpeg_dir = ("" + `workspace -expandName "scripts/ffmpeg.exe"`);
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
 	$sub_dir_cb = {};
@@ -68,7 +80,7 @@ global proc FFMpegSewWindow ()
 
 	formLayout -numberOfDivisions 100 ffmpeg_form;
 
-	//text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
+	text -w 100 ("Project: " + (basenameEx (`workspace -q -rd`)));
 
 	radioButtonGrp
 		-numberOfRadioButtons 2
@@ -88,8 +100,19 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 110
 	    ffmpeg_row;
 		text -label "ffmpeg loc";
-		textField -changeCommand setFFmpeg ffmpeg_field;
+		textField -tx $ffmpeg_dir -changeCommand setFFmpeg ffmpeg_field;
 		button -label ("Browse") -command browseFFmpeg ffmpeg_browse; 
+		setParent..;
+
+	rowLayout -numberOfColumns 2 
+	    -adjustableColumn true
+	    -columnAlign  1 "left"
+	    -columnAlign  2 "right"
+		-columnWidth 1 70
+		-columnWidth 2 170
+	    file_format_row;
+		text -label "file format";
+		textField -w 140 -tx $img_names -changeCommand setFileFormat file_format_field;
 		setParent..;
 
 	rowLayout -numberOfColumns 3 
@@ -100,7 +123,7 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 110
 	    source_row;
 		text -label "Source";
-		textField -changeCommand setSource source_field;
+		textField -tx $src_img_dir -changeCommand setSource source_field;
 		button -label ("Browse") -command browseSource src_browse; 
 		setParent..;
 
@@ -112,7 +135,7 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 110
 		output_row;
 		text -label "Output";
-		textField -changeCommand setOutput output_field;
+		textField -tx $out_mov_dir -changeCommand setOutput output_field;
 		button -label ("Browse") -command browseOutput out_browse; 
 		setParent..;
 
@@ -136,19 +159,21 @@ global proc FFMpegSewWindow ()
 			sub_layout;
 
 	formLayout -edit
-		-attachForm myRadBtnGrp "top" 15
+		-attachForm myRadBtnGrp "top" 20
 		-attachForm myRadBtnGrp "left" 30
 		-attachForm ffmpeg_row "top" 45
 		-attachForm ffmpeg_row "left" 20
-		-attachForm source_row "top" 80
+		-attachForm file_format_row "top" 80
+		-attachForm file_format_row "left" 20
+		-attachForm source_row "top" 117
 		-attachForm source_row "left" 30
-		-attachForm output_row "top" 117
+		-attachForm output_row "top" 150
 		-attachForm output_row "left" 30
-		-attachForm submit_row "top" 150
+		-attachForm submit_row "top" 190
 		-attachForm submit_row "left" 30
-		-attachForm sep "top" 190
+		-attachForm sep "top" 220
 		-attachForm sep "left" 10
-		-attachForm sub_layout "top" 220
+		-attachForm sub_layout "top" 250
 		-attachForm sub_layout "left" -330
 	ffmpeg_form;  
 
@@ -189,14 +214,18 @@ global proc set_subdirectories (string $dir)
 	clear_subs();
 	int $i = 0;
 	for ($f in $out_files){
-		string $new_cb_name = ("sub_ch_"+$i);
-		string $new_tf_name = ("sub_tf_"+$i);
-		string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
-		string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
+		string $f_no_spaces = substituteAllString($f, " ", "_");
+		$f_no_spaces = substituteAllString($f_no_spaces, "-", "_");
+		$f_no_spaces = substituteAllString($f_no_spaces, "(", "_");
+		$f_no_spaces = substituteAllString($f_no_spaces, ")", "_");
+		string $new_cb_name = ("sub_ch_"+$f_no_spaces);
+		// string $new_tf_name = ("sub_tf_"+$f);
+		// string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
+		// string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
 		$sub_dir_cb[$i] = $new_cb_name;
-		$sub_dir_tf[$i] = $new_tf_name;
-		checkBox -label " " -v true -offCommand $disable_cmd -onCommand $enable_cmd $new_cb_name;
-		textField -text $f $new_tf_name;
+		// $sub_dir_tf[$i] = $new_tf_name;
+		checkBox -label $f -v true $new_cb_name;
+		// textField -text $f $new_tf_name;
 		$i = $i + 1;
 	}
 	formLayout -edit
@@ -206,17 +235,17 @@ global proc set_subdirectories (string $dir)
 
 global proc clear_subs(){
 	global string $sub_dir_cb[];
-	global string $sub_dir_tf[];
+	// global string $sub_dir_tf[];
 	if(size($sub_dir_cb) > 0){
 		for ($cb in $sub_dir_cb){
 			deleteUI $cb;
 		}
-		for ($tf in $sub_dir_tf){
-			deleteUI $tf;
-		}
+		// for ($tf in $sub_dir_tf){
+		// 	deleteUI $tf;
+		// }
 	}
 	$sub_dir_cb = {};
-	$sub_dir_tf = {};
+	// $sub_dir_tf = {};
 }
 
 global proc FFMpegSew() {
@@ -224,11 +253,15 @@ global proc FFMpegSew() {
 	global string $src_img_dir;
 	global string $out_mov_dir;
 	global string $ffmpeg_dir;
+	global string $img_names;
 	if($src_img_dir == "" || $out_mov_dir == ""){
 		error "please select a source and output directory";
 	}
 	if($ffmpeg_dir == ""){
 		error "please specify the location of ffmpeg.exe";
+	}
+	if($img_names == ""){
+		error "please specify the format your file names will follow";
 	}
 	
 	global string $ffmpeg_dir;
@@ -247,18 +280,16 @@ global proc FFMpegSew() {
 	string $ffmpeg_input_vars = " -r 12 -f image2 -s 1280x720 -i ";
 	string $ffmpeg_output_vars = "-vcodec libx264 -pix_fmt yuv420p -crf 25";
 
-	global string $img_names;
-	$img_names = "FF%d.tif";
 	if(`checkBox -q -v sub_checkbox`){
-		print "subs enabled";
+		// print "subs enabled";
 		global string $sub_dir_cb[];
-		global string $sub_dir_tf[];
+		// global string $sub_dir_tf[];
 		string $ts_list = "";
 
 		int $subidx = 0;
 		for ($cb in $sub_dir_cb){
 			if(`checkBox -q -v $cb`){
-				string $curr_subdir = `textField -q -tx $sub_dir_tf[$subidx]`;
+				string $curr_subdir = `checkBox -q -label $sub_dir_cb[$subidx]`;
 
 				$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $curr_subdir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $src_img_dir + "/" + $curr_subdir + "/out.mp4\"";
 
@@ -278,9 +309,13 @@ global proc FFMpegSew() {
 		}
 
 		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc \"" + $out_mov_dir + "/Final.mp4\"";
-		print $ffmpeg_combine_cmd;
+		// print $ffmpeg_combine_cmd;
 		system($ffmpeg_combine_cmd);
-
+		string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
+		if($openMovieQuery == "Yes"){
+			print("\""+$out_mov_dir + "/Final.mp4\"");
+			system("\""+$out_mov_dir + "/Final.mp4\"");
+		}
 		//may not have permissions to delete
 		/*
 		$subidx = 0;
@@ -313,24 +348,36 @@ global proc WriteSettings()
 	global string $src_img_dir;
 	global string $out_mov_dir;
 	global string $ffmpeg_dir;
+	global string $img_names;
 	// Create A String Array With Test Data
 	string $myStrArray[] =
 	    {
 	    "textField -e -text \"" + $ffmpeg_dir + "\" ffmpeg_field;",
+	    "textField -e -text \"" + $img_names + "\" file_format_field;",
 	    "textField -e -text \"" + $src_img_dir + "\" source_field;",
 	    "textField -e -text \"" + $out_mov_dir + "\" output_field;"
 	    };
 
+	// appendStringArray($myStrArray[], $sub_dir_cb[], size($sub_dir_cb)) 
+	// int $i = 0;
+	global string $sub_dir_cb[];
+	for($cb in $sub_dir_cb){
+		string $cb_v = `checkBox -q -v $cb`;
+		print("checkBox -e -v " + $cb_v + " "+$cb+";");
+		stringArrayInsertAtIndex(size($myStrArray), $myStrArray, "checkBox -e -v " + $cb_v + " "+$cb+";");
+		// $i++;
+	}
+
     string $filePath = (`internalVar -usd` + "ffmpeg_stitch_Settings.txt") ;
 
-$fileId = `fopen $filePath "w"` ;
+	$fileId = `fopen $filePath "w"` ;
 
-// Print Array To File
-for($line in $myStrArray)
-fprint $fileId ($line+"\n") ;
+	// Print Array To File
+	for($line in $myStrArray)
+		fprint $fileId ($line+"\n") ;
 
-// Close File
-fclose $fileId ;
+	// Close File
+	fclose $fileId ;
 }
 
 global proc ReadSettings()
