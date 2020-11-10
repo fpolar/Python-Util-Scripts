@@ -1,5 +1,5 @@
-//Version 1.1.0
-//Added FFmpeg.exe location verification error and basic setting writing implemented
+//Version 1.3.5
+//Added Added file format text field and saving subdirectory status to settings
 
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
@@ -197,7 +197,6 @@ global proc set_subdirectories (string $dir)
 	}
 
 	//getting subdirectories
-	//TODO filetest seems to think some files are directories
 	string $files[] = `getFileList -fld $dir`;
 	string $out_files[] = {};
 	for ($f in $files){
@@ -219,13 +218,8 @@ global proc set_subdirectories (string $dir)
 		$f_no_spaces = substituteAllString($f_no_spaces, "(", "_");
 		$f_no_spaces = substituteAllString($f_no_spaces, ")", "_");
 		string $new_cb_name = ("sub_ch_"+$f_no_spaces);
-		// string $new_tf_name = ("sub_tf_"+$f);
-		// string $disable_cmd = "textField -edit -enable false "+ $new_tf_name;
-		// string $enable_cmd = "textField -edit -enable true "+ $new_tf_name;
 		$sub_dir_cb[$i] = $new_cb_name;
-		// $sub_dir_tf[$i] = $new_tf_name;
 		checkBox -label $f -v true $new_cb_name;
-		// textField -text $f $new_tf_name;
 		$i = $i + 1;
 	}
 	formLayout -edit
@@ -235,17 +229,12 @@ global proc set_subdirectories (string $dir)
 
 global proc clear_subs(){
 	global string $sub_dir_cb[];
-	// global string $sub_dir_tf[];
 	if(size($sub_dir_cb) > 0){
 		for ($cb in $sub_dir_cb){
 			deleteUI $cb;
 		}
-		// for ($tf in $sub_dir_tf){
-		// 	deleteUI $tf;
-		// }
 	}
 	$sub_dir_cb = {};
-	// $sub_dir_tf = {};
 }
 
 global proc FFMpegSew() {
@@ -266,7 +255,6 @@ global proc FFMpegSew() {
 	
 	global string $ffmpeg_dir;
 	string $ffmpeg = $ffmpeg_dir;
-	// string $ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
     if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
     	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
@@ -281,9 +269,7 @@ global proc FFMpegSew() {
 	string $ffmpeg_output_vars = "-vcodec libx264 -pix_fmt yuv420p -crf 25";
 
 	if(`checkBox -q -v sub_checkbox`){
-		// print "subs enabled";
 		global string $sub_dir_cb[];
-		// global string $sub_dir_tf[];
 		string $ts_list = "";
 
 		int $subidx = 0;
@@ -309,7 +295,6 @@ global proc FFMpegSew() {
 		}
 
 		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc \"" + $out_mov_dir + "/Final.mp4\"";
-		// print $ffmpeg_combine_cmd;
 		system($ffmpeg_combine_cmd);
 		string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
 		if($openMovieQuery == "Yes"){
@@ -357,17 +342,13 @@ global proc WriteSettings()
 	    "textField -e -text \"" + $img_names + "\" file_format_field;",
 	    "textField -e -text \"" + $src_img_dir + "\" source_field;",
 	    "textField -e -text \"" + $out_mov_dir + "\" output_field;"
-	    // "checkBox -e -v \"" + $sub_checked + "\" sub_checkbox;"
 	    };
 
-	// appendStringArray($myStrArray[], $sub_dir_cb[], size($sub_dir_cb)) 
-	// int $i = 0;
 	global string $sub_dir_cb[];
 	for($cb in $sub_dir_cb){
 		string $cb_v = `checkBox -q -v $cb`;
 		print("checkBox -e -v " + $cb_v + " "+$cb+";");
 		stringArrayInsertAtIndex(size($myStrArray), $myStrArray, "checkBox -e -v " + $cb_v + " "+$cb+";");
-		// $i++;
 	}
 
     string $filePath = (`internalVar -usd` + "ffmpeg_stitch_Settings.txt") ;
