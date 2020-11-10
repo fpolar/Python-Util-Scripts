@@ -4,7 +4,7 @@
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
 global string $ffmpeg_dir = "";
-global string $img_names = "f%d.tif";
+global string $img_names = "s%02d_c%02d.%04d.jpeg";
 global string $sub_dir_cb[];
 global string $sub_dir_tf[];
 
@@ -12,6 +12,8 @@ global proc setFileFormat ()
 {
 	global string $img_names;
 	$img_names = `textField -q -text file_format_field`;
+	print($img_names);
+	print("\n");
 }
 
 global proc setImageName (string $src_text_field) 
@@ -71,8 +73,8 @@ global proc FFMpegSewWindow ()
 	global string $ffmpeg_dir;
 	global string $img_names;
 	$src_img_dir = ("" + `workspace -expandName "images"`);
-	$out_mov_dir = ("" + `workspace -expandName "output"`);
-	$ffmpeg_dir = ("" + `workspace -expandName "scripts/ffmpeg.exe"`);
+	$out_mov_dir = ("" + `workspace -expandName "movies"`);
+	$ffmpeg_dir = ("" + `workspace -expandName "scripts/ffmpeg/bin/ffmpeg.exe"`);
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
 	$sub_dir_cb = {};
@@ -112,7 +114,7 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 170
 	    file_format_row;
 		text -label "file format";
-		textField -w 140 -tx $img_names -changeCommand setFileFormat file_format_field;
+		textField -w 140 -enable false -tx $img_names -changeCommand setFileFormat file_format_field;
 		setParent..;
 
 	rowLayout -numberOfColumns 3 
@@ -265,8 +267,8 @@ global proc FFMpegSew() {
     
 	$ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
 
-	string $ffmpeg_input_vars = " -r 12 -f image2 -s 1280x720 -i ";
-	string $ffmpeg_output_vars = "-vcodec libx264 -pix_fmt yuv420p -crf 25";
+	string $ffmpeg_input_vars = " -vcodec libx264 -vf scale=640:-2,format=yuv420p ";
+	string $ffmpeg_output_vars = "";
 
 	if(`checkBox -q -v sub_checkbox`){
 		global string $sub_dir_cb[];
@@ -277,15 +279,16 @@ global proc FFMpegSew() {
 			if(`checkBox -q -v $cb`){
 				string $curr_subdir = `checkBox -q -label $sub_dir_cb[$subidx]`;
 
-				$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $curr_subdir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $src_img_dir + "/" + $curr_subdir + "/out.mp4\"";
+				$ffmpeg_cmd = "shell " + $ffmpeg + " -y -i " + $src_img_dir + "/" + $curr_subdir + "/" + $curr_subdir + ".%04d.jpeg " + $ffmpeg_input_vars + $out_mov_dir + "/"+$curr_subdir+"_out.mp4";
+				// print($ffmpeg_cmd+"\n");
 
 				$cmd_out = system($ffmpeg_cmd);
 				if($cmd_out != "") print $cmd_out;
 
-				string $ts_path = $src_img_dir + "/" + $curr_subdir + "/temp.ts";
-
-				$ffmpeg_temp_cmd = "shell "+$ffmpeg+" -i \""+$src_img_dir + "/" + $curr_subdir+"/out.mp4\" -c copy -bsf:v h264_mp4toannexb -f mpegts \"" + $ts_path + "\"";
-
+				string $ts_path = $out_mov_dir + "/" + $curr_subdir + "_temp.ts";
+				// print($ts_path+"\n");
+				$ffmpeg_temp_cmd = "shell "+$ffmpeg+" -i " +$out_mov_dir + "/" + $curr_subdir+"_out.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts " + $ts_path;
+				// print($ffmpeg_temp_cmd+"\n");
 				system($ffmpeg_temp_cmd);
 
 				$ts_list = $ts_list + $ts_path +"|";
@@ -294,8 +297,9 @@ global proc FFMpegSew() {
 			$subidx = $subidx + 1;
 		}
 
-		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc \"" + $out_mov_dir + "/Final.mp4\"";
+		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc " + $out_mov_dir + "/Final.mp4";
 		system($ffmpeg_combine_cmd);
+		print($ffmpeg_combine_cmd+"\n");
 		string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
 		if($openMovieQuery == "Yes"){
 			print("\""+$out_mov_dir + "/Final.mp4\"");
@@ -316,9 +320,16 @@ global proc FFMpegSew() {
 		}
 		*/
 	}else{
-		$ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + "\" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
-		$cmd_out = system($ffmpeg_cmd);
-		if($cmd_out != "") print $cmd_out;
+		// $ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + " \" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
+		// $cmd_out = system($ffmpeg_cmd);
+		// if($cmd_out != "") print $cmd_out;
+		// string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
+		// if($openMovieQuery == "Yes"){
+		// 	print("\""+$out_mov_dir + "/out.mp4\"");
+		// 	system("\""+$out_mov_dir + "/out.mp4\"");
+		// }
+
+		error "please specify the subdirectories you would like to stitch together";
 	}
  
  	//This deletes the temporary files created to sew them all together in mp4 format. 
@@ -374,7 +385,10 @@ global proc ReadSettings()
 	    $nextLine = `fgetline $fileId`;
 	}
 	fclose $fileId;
-
+	setSource();
+	setOutput();
+	setFFmpeg();
+	setFileFormat();
 }
 
 FFMpegSewWindow;
