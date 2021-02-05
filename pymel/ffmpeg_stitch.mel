@@ -1,5 +1,5 @@
-//Version 1.3.5
-//Added Added file format text field and saving subdirectory status to settings
+//Version 1.4
+//Made file naming based off of subdirectory name and changed ffmpeg variables to orignal
 
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
@@ -72,9 +72,9 @@ global proc FFMpegSewWindow ()
 	global string $out_mov_dir;
 	global string $ffmpeg_dir;
 	global string $img_names;
-	$src_img_dir = ("" + `workspace -expandName "images"`);
-	$out_mov_dir = ("" + `workspace -expandName "movies"`);
-	$ffmpeg_dir = ("" + `workspace -expandName "scripts/ffmpeg/bin/ffmpeg.exe"`);
+	$src_img_dir = ("" + `workspace -q -rd`+ "images");
+	$out_mov_dir = ("" + `workspace -q -rd`+ "movies");
+	$ffmpeg_dir = ("" + `workspace -q -rd`+ "scripts/ffmpeg/bin/ffmpeg.exe");
 	global string $sub_dir_cb[];
 	global string $sub_dir_tf[];
 	$sub_dir_cb = {};
@@ -265,8 +265,6 @@ global proc FFMpegSew() {
     	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg");
     }
     
-	$ffmpeg = "C:/Users/theon/Documents/ffmpeg/bin/ffmpeg.exe";
-
 	string $ffmpeg_input_vars = " -vcodec libx264 -vf scale=640:-2,format=yuv420p ";
 	string $ffmpeg_output_vars = "";
 
@@ -277,25 +275,34 @@ global proc FFMpegSew() {
 		int $subidx = 0;
 		for ($cb in $sub_dir_cb){
 			if(`checkBox -q -v $cb`){
-				string $curr_subdir = `checkBox -q -label $sub_dir_cb[$subidx]`;
+				string $curr_subdir = `checkBox -q -label $cb`;
 
-				$ffmpeg_cmd = "shell " + $ffmpeg + " -y -i " + $src_img_dir + "/" + $curr_subdir + "/" + $curr_subdir + ".%04d.jpeg " + $ffmpeg_input_vars + $out_mov_dir + "/"+$curr_subdir+"_out.mp4";
-				// print($ffmpeg_cmd+"\n");
+				$ffmpeg_cmd = $ffmpeg + " -y -i " + $src_img_dir + "/" + $curr_subdir + "/" + $curr_subdir + ".%04d.jpeg " + $ffmpeg_input_vars + $out_mov_dir + "/"+$curr_subdir+"_out.mp4";
+				print($ffmpeg_cmd+"\n");
 
 				$cmd_out = system($ffmpeg_cmd);
 				if($cmd_out != "") print $cmd_out;
 
-				string $ts_path = $out_mov_dir + "/" + $curr_subdir + "_temp.ts";
-				// print($ts_path+"\n");
-				$ffmpeg_temp_cmd = "shell "+$ffmpeg+" -i " +$out_mov_dir + "/" + $curr_subdir+"_out.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts " + $ts_path;
-				// print($ffmpeg_temp_cmd+"\n");
-				system($ffmpeg_temp_cmd);
-
-				$ts_list = $ts_list + $ts_path +"|";
-
 			}
 			$subidx = $subidx + 1;
 		}
+		for ($cb in $sub_dir_cb){
+			if(`checkBox -q -v $cb`){
+				string $curr_subdir = `checkBox -q -label $cb`;
+				string $ts_path = $out_mov_dir + "/" + $curr_subdir + "_temp.ts";
+				// print($ts_path+"\n");
+
+				string $mov_exists = `filetest -e ($out_mov_dir + "/" + $curr_subdir+"_out.mp4")`;
+				print($mov_exists+"\n");
+				string $ffmpeg_temp_cmd = $ffmpeg+" -y -i " +$out_mov_dir + "/" + $curr_subdir+"_out.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts " + $ts_path;
+				print($ffmpeg_temp_cmd+"\n");
+				system($ffmpeg_temp_cmd);
+
+				$ts_list = $ts_list + $ts_path +"|";
+			}
+		}
+
+		// $ts_list = `substring $ts_list 1 (size($ts_list)-1)`;
 
 		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc " + $out_mov_dir + "/Final.mp4";
 		system($ffmpeg_combine_cmd);
