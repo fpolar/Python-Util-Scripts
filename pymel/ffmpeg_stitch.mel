@@ -67,6 +67,7 @@ global proc FFMpegSewWindow ()
 	menu -label "Settings" -tearOff false;
 	    menuItem -label "Load Settings" -c ReadSettings;
 	    menuItem -label "Save Settings" -c WriteSettings;
+		menuItem -label "Help" -c InstructionsDialogue;
 
 	global string $src_img_dir;
 	global string $out_mov_dir;
@@ -101,7 +102,7 @@ global proc FFMpegSewWindow ()
 		-columnWidth 1 60
 		-columnWidth 2 110
 	    ffmpeg_row;
-		text -label "ffmpeg loc";
+		text -label "ffmpeg exe";
 		textField -tx $ffmpeg_dir -changeCommand setFFmpeg ffmpeg_field;
 		button -label ("Browse") -command browseFFmpeg ffmpeg_browse; 
 		setParent..;
@@ -114,7 +115,7 @@ global proc FFMpegSewWindow ()
 		-columnWidth 2 170
 	    file_format_row;
 		text -label "file format";
-		textField -w 140 -enable false -tx $img_names -changeCommand setFileFormat file_format_field;
+		textField -w 140 -enable true -tx $img_names -changeCommand setFileFormat file_format_field;
 		setParent..;
 
 	rowLayout -numberOfColumns 3 
@@ -255,18 +256,17 @@ global proc FFMpegSew() {
 		error "please specify the format your file names will follow";
 	}
 	
+	//print(filetest -x $ffmpeg_dir);
+	int $ffmpegE = `filetest -x $ffmpeg_dir`;
+	if(!$ffmpegE){
+		error "something is wrong with your ffmpeg executable";
+	}
+
 	global string $ffmpeg_dir;
 	string $ffmpeg = $ffmpeg_dir;
-
-    if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
-    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
-    }
-    if (`radioButtonGrp -q -select myRadBtnGrp` == 2) {
-    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg");
-    }
     
 	string $ffmpeg_input_vars = " -vcodec libx264 -vf scale=640:-2,format=yuv420p ";
-	string $ffmpeg_output_vars = "";
+	string $ffmpeg_output_vars = " -y -loglevel error";
 
 	if(`checkBox -q -v sub_checkbox`){
 		global string $sub_dir_cb[];
@@ -304,7 +304,7 @@ global proc FFMpegSew() {
 
 		// $ts_list = `substring $ts_list 1 (size($ts_list)-1)`;
 
-		string $ffmpeg_combine_cmd = $ffmpeg + " -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc " + $out_mov_dir + "/Final.mp4";
+		string $ffmpeg_combine_cmd = $ffmpeg + " -loglevel error -y -i \"concat:" + $ts_list + "\" -c copy -bsf:a aac_adtstoasc " + $out_mov_dir + "/Final.mp4 ";
 		system($ffmpeg_combine_cmd);
 		print($ffmpeg_combine_cmd+"\n");
 		string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
@@ -327,16 +327,24 @@ global proc FFMpegSew() {
 		}
 		*/
 	}else{
-		// $ffmpeg_cmd = "shell " + $ffmpeg + $ffmpeg_input_vars + "\"" + $src_img_dir + "/" + $img_names + " \" "+ $ffmpeg_output_vars+" \"" + $out_mov_dir + "/out.mp4\"";
-		// $cmd_out = system($ffmpeg_cmd);
-		// if($cmd_out != "") print $cmd_out;
-		// string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
-		// if($openMovieQuery == "Yes"){
-		// 	print("\""+$out_mov_dir + "/out.mp4\"");
-		// 	system("\""+$out_mov_dir + "/out.mp4\"");
-		// }
+		$ffmpeg_cmd = $ffmpeg + " -i " + $src_img_dir + "/" + $img_names + " "+ $ffmpeg_input_vars+" " + $out_mov_dir + "/out.mp4" + $ffmpeg_output_vars;
+		$cmd_out = system($ffmpeg_cmd);
+		//C:/Users/theon/Documents/maya/2020/scripts/ffmpeg.exe -i C:/Users/theon/Desktop/justFunZeph/masterLayer/camera2/%04d.jpg -vcodec libx264 -vf scale=640:-2,format=yuv420p C:/Users/theon/Desktop/out.mp4
+		//C:/Users/theon/Documents/maya/2020/scripts/ffmpeg.exe -i C:/Users/theon/Desktop/justFunZeph/masterLayer/camera2/%d.jpg  -vcodec libx264 -vf scale=640:-2,format=yuv420p  C:/Users/theon/Desktop/out.mp4
 
-		error "please specify the subdirectories you would like to stitch together";
+		print("\nNo Sub Command OUt\n"+$cmd_out+"\n");
+		print("\nNo Sub Command\n"+$ffmpeg_cmd+"\n");
+		if($cmd_out == ""){
+			string $openMovieQuery = `confirmDialog -title "Confirm" -message "Open Movie?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No"`;
+			if($openMovieQuery == "Yes"){
+				print("\""+$out_mov_dir + "/out.mp4\"");
+				system("\""+$out_mov_dir + "/out.mp4\"");
+			}
+		}else{
+			$cmd_out = "FFMPEG ERROR: "+$cmd_out;
+			string $openMovieQuery = `confirmDialog -title "ERROR" -message $cmd_out`;
+		}
+		// error "please specify the subdirectories you would like to stitch together";
 	}
  
  	//This deletes the temporary files created to sew them all together in mp4 format. 
@@ -396,6 +404,23 @@ global proc ReadSettings()
 	setOutput();
 	setFFmpeg();
 	setFileFormat();
+}
+
+global proc ConfirmScriptLoc(){
+	global string $ffmpeg_dir;
+	string $ffmpeg = $ffmpeg_dir;
+
+    if (`radioButtonGrp -q -select myRadBtnGrp` == 1) {
+    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg/bin/ffmpeg.exe");
+    }
+    if (`radioButtonGrp -q -select myRadBtnGrp` == 2) {
+    	$ffmpeg = (`workspace -q -rd` + "scripts/ffmpeg");
+    }
+}
+
+global proc InstructionsDialogue(){
+	string $instructions = "Use the browse buttons or input fields to find the location of your ffmpeg executable, directory where your images are and the directory where you want your movie saved. \n The file format field specifies how ffmpeg will read the images in the source folder, ie %04d.jpg will stich together all images from 0000.jpg to 9999.jpg";
+	string $InstructionsDialogue = `confirmDialog -title "FFMPEG Stitch Script Instructions" -message $instructions`;
 }
 
 FFMpegSewWindow;
