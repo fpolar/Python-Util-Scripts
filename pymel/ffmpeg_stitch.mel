@@ -1,5 +1,5 @@
-//Version 1.4
-//Made file naming based off of subdirectory name and changed ffmpeg variables to orignal
+//Version 1.5
+//Added more error reporting and instructions dialogues
 
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
@@ -259,6 +259,8 @@ global proc FFMpegSew() {
 	//print(filetest -x $ffmpeg_dir);
 	int $ffmpegE = `filetest -x $ffmpeg_dir`;
 	if(!$ffmpegE){
+		$error_message = "FFMPEG ERROR: something is wrong with your ffmpeg executable";
+		string $openErrorQuery = `confirmDialog -title "ERROR" -message $error_message`;
 		error "something is wrong with your ffmpeg executable";
 	}
 
@@ -342,7 +344,7 @@ global proc FFMpegSew() {
 			}
 		}else{
 			$cmd_out = "FFMPEG ERROR: "+$cmd_out;
-			string $openMovieQuery = `confirmDialog -title "ERROR" -message $cmd_out`;
+			string $openErrorQuery = `confirmDialog -title "ERROR" -message $cmd_out`;
 		}
 		// error "please specify the subdirectories you would like to stitch together";
 	}
