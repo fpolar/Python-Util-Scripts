@@ -29,10 +29,21 @@ global proc setFFmpeg ()
 
 	int $ffmpegE = `filetest -x $ffmpeg_dir`;
 	if(!$ffmpegE){
-		$error_message = "FFMPEG ERROR: file at "+$ffmpeg_dir+" is not executable. \n Please check you downloaded the correct release for your OS";
+		$error_message = "FFMPEG ERROR:\n\n file at \""+$ffmpeg_dir+"\" is not executable. \n\n\n Please check you downloaded the build for your OS \n(https://ffmpeg.org/download.html) \n\n or \n\n specifiy a new location of your ffmpeg executable";
 		string $openErrorQuery = `confirmDialog -title "ERROR" -message $error_message`;
 		error "something went wrong with ffmpeg executable";
 	}
+}
+
+global proc setFFmpegPC () 
+{
+	textField -e -text ("" + `workspace -q -rd`+ "scripts/ffmpeg/bin/ffmpeg.exe") ffmpeg_field;
+	setFFmpeg();
+}
+global proc setFFmpegMAC () 
+{
+	textField -e -text ("" + `workspace -q -rd`+ "scripts/ffmpeg") ffmpeg_field;
+	setFFmpeg();
 }
 
 global proc browseFFmpeg () 
@@ -100,6 +111,8 @@ global proc FFMpegSewWindow ()
 		-columnWidth 1 50
 		-columnWidth 2 100
 		-columnWidth 2 100
+		-on1 setFFmpegPC
+		-on2 setFFmpegMAC
 	myRadBtnGrp;
 
 	rowLayout -numberOfColumns 3 
