@@ -255,7 +255,25 @@ global proc FFMpegSew() {
 	if($img_names == ""){
 		error "please specify the format your file names will follow";
 	}
-	
+
+	string $match_flag = `match " " $src_img_dir`;
+	if($match_flag == " "){
+		print "space";
+		$src_img_dir = "\""+$src_img_dir+"\"";
+	}
+	$match_flag = `match " " $out_mov_dir`;
+	if($match_flag == " "){
+		print "space";
+		$out_mov_dir = "\""+$out_mov_dir+"\"";
+	}
+	$match_flag = `match " " $ffmpeg_dir`;
+	if($match_flag == " "){
+		print "space";
+		$ffmpeg_dir = "\""+$ffmpeg_dir+"\"";
+	}
+
+
+
 	//print(filetest -x $ffmpeg_dir);
 	int $ffmpegE = `filetest -x $ffmpeg_dir`;
 	if(!$ffmpegE){
@@ -264,9 +282,7 @@ global proc FFMpegSew() {
 		error "something is wrong with your ffmpeg executable";
 	}
 
-	global string $ffmpeg_dir;
 	string $ffmpeg = $ffmpeg_dir;
-    
 	string $ffmpeg_input_vars = " -vcodec libx264 -vf scale=640:-2,format=yuv420p ";
 	string $ffmpeg_output_vars = " -y -loglevel error";
 
