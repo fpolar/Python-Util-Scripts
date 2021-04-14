@@ -15,6 +15,8 @@ lFullJob = scriptJob(attributeChange=[ns+'Eyes_controller.lFullyClosed', "manage
 lTopJob = scriptJob(attributeChange=[ns+'Eyes_controller.lTopLid', "manageEyeLids('l')"])
 lBotJob = scriptJob(attributeChange=[ns+'Eyes_controller.lBotLid', "manageEyeLids('l')"])
 
+#read any changes in the properties of the eyelid controller
+#and call transformation functions on respective joints 
 def manageEyeLids(side):
 
     controllerSelected = False
@@ -85,11 +87,11 @@ def manageEyeLids(side):
     
     if controllerSelected: 
         select(ns+'Eyes_controller')        
+
 #Retrieves scale transform done on the 'side' eye joint
-#Returns a transform vector that can apply the same transform on a lid
-#eye: X Y Z
-#lid: Z Y X
-#note: on future rigs orienting the joints more carefully could be better
+#Returns a transform vector that can apply the same transform on a lid 
+#eye orientation: X Y Z
+#lid orientation: Z Y X
 def eyeScaleToLidSpace(side):
     eyeScale = general.PyNode(ns+'j_'+side+'_eye').getScale()
     return [eyeScale[2], eyeScale[1], eyeScale[0]]
