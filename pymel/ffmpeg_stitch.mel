@@ -4,7 +4,8 @@
 global string $src_img_dir = "";
 global string $out_mov_dir = "";
 global string $ffmpeg_dir = "";
-global string $img_names = "s%02d_c%02d.%04d.jpg";
+global string $img_names = ".%04d.jpg";
+// global string $img_names = "s%02d_c%02d.%04d.jpg";
 global string $sub_dir_cb[];
 global string $sub_dir_tf[];
 
@@ -323,7 +324,7 @@ global proc FFMpegSew() {
 			if(`checkBox -q -v $cb`){
 				string $curr_subdir = `checkBox -q -label $cb`;
 
-				$ffmpeg_cmd = $ffmpeg + " -y -i " + $src_img_dir + "/" + $curr_subdir + "/" + $curr_subdir + ".%04d.jpeg " + $ffmpeg_input_vars + $out_mov_dir + "/"+$curr_subdir+"_out.mp4";
+				$ffmpeg_cmd = $ffmpeg + " -y -i " + $src_img_dir + "/" + $curr_subdir + "/" + $curr_subdir + $img_names + $ffmpeg_input_vars + $out_mov_dir + "/"+$curr_subdir+"_out.mp4";
 				print($ffmpeg_cmd+"\n");
 
 				$cmd_out = system($ffmpeg_cmd);
